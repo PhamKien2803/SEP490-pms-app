@@ -1,0 +1,42 @@
+export const messages = {
+    // Thông báo lỗi
+    MSG_ERROR_CODE_401: 'Phiên đăng nhập hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.',
+    MSG_ERROR_CODE_403: 'Bị cấm. Bạn không có quyền truy cập tài nguyên này.',
+    MSG_ERROR_CODE_404: 'Không tìm thấy. Tài nguyên được yêu cầu không tồn tại.',
+    MSG_ERROR_CODE_500: 'Lỗi máy chủ nội bộ. Vui lòng thử lại sau.',
+    MSG_ERROR_CODE_503: 'Dịch vụ không khả dụng. Vui lòng thử lại sau.',
+    AN_UNKNOWN_ERROR_OCCURRED: 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.',
+    MSG_ERROR_CODE_429: 'Quá nhiều yêu cầu. Vui lòng thử lại sau.',
+    MSG_ERROR_CODE_408: 'Yêu cầu quá thời gian chờ. Vui lòng thử lại sau.',
+    MSG_ERROR_CODE_400: 'Yêu cầu không hợp lệ. Vui lòng kiểm tra lại thông tin nhập và thử lại.',
+    MSG_ERROR_CODE_502: 'Lỗi cổng kết nối (Bad Gateway). Vui lòng thử lại sau.',
+    MSG_ERROR_CODE_504: 'Lỗi cổng kết nối quá thời gian chờ (Gateway Timeout). Vui lòng thử lại sau.',
+    NETWORK_ERROR: 'Lỗi mạng. Vui lòng kiểm tra kết nối internet của bạn.',
+
+    // Thông báo thành công
+    MSG_SUCCESS_CREATE: 'Tạo thành công.',
+    MSG_SUCCESS_UPDATE: 'Cập nhật thành công.',
+    MSG_SUCCESS_DELETE: 'Xóa thành công.',
+    MSG_SUCCESS_FETCH: 'Tải dữ liệu thành công.',
+    MSG_SUCCESS_LOGIN: 'Đăng nhập thành công.',
+    MSG_SUCCESS_LOGOUT: 'Đăng xuất thành công.',
+    MSG_SUCCESS_REGISTER: 'Đăng ký thành công.',
+    MSG_SUCCESS_VERIFICATION: 'Xác minh thành công.',
+    MSG_SUCCESS_PASSWORD_RESET: 'Mật khẩu đã được đặt lại thành công.',
+    MSG_SUCCESS_EMAIL_SENT: 'Gửi email thành công.',
+    MSG_SUCCESS_UPLOAD: 'Tải tệp lên thành công.',
+    MSG_SUCCESS_SUBMIT: 'Gửi thành công.',
+
+    // Thông báo xác thực và chung
+    REQUIRED: 'Trường này là bắt buộc.',
+    INVALID_EMAIL: 'Vui lòng nhập địa chỉ email hợp lệ.',
+    PASSWORD_MIN_LENGTH: 'Mật khẩu phải có ít nhất 8 ký tự.',
+    MSG_ERROR_CODE_NETWORK: 'Lỗi mạng. Vui lòng kiểm tra kết nối internet của bạn.',
+    INVALID_CREDENTIALS: 'Email hoặc mật khẩu không hợp lệ.',
+    PASSWORDS_DO_NOT_MATCH: 'Mật khẩu không khớp.',
+    SESSION_EXPIRED: 'Phiên của bạn đã hết hạn. Vui lòng đăng nhập lại.',
+    UNSAVED_CHANGES: 'Bạn có những thay đổi chưa được lưu. Bạn có chắc muốn rời đi?',
+    NO_DATA: 'Không có dữ liệu.',
+    LOADING: 'Đang tải...',
+    SUBMITTING: 'Đang gửi...',
+}
