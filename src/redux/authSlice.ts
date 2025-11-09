@@ -12,6 +12,7 @@ export const login = createAsyncThunk<string, LoginRequest, { rejectValue: Login
         try {
             const res = await axiosAuth.post<LoginResponse>(apiEndPoint.LOGIN, credentials);
             const { token, error } = res.data;
+            console.log("[Bthieu] ~ token:", token)
             if (error || !token) {
                 return rejectWithValue(error || { message: "Đăng nhập thất bại" });
             }
