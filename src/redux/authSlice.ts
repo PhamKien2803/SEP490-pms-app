@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ApiUserResponse, initialState, LoginRequest, LoginResponse, ModuleMenu, PermissionModule, PermissionsMap, User } from "../types/auth";
 import axiosAuth from "../services/axiosAuth";
 import { apiEndPoint } from "../services/api";
+import { userApis } from "../services/apiServices";
 
 const tokenKey = 'token';
 
@@ -26,8 +27,27 @@ export const login = createAsyncThunk<string, LoginRequest, { rejectValue: Login
 
 const fetchUserData = async () => {
     const res = await axiosAuth.get<ApiUserResponse>(apiEndPoint.CURRENT_USER);
+    console.log("🚀 ~ fetchUserData ~ res:", res.data.userProfile.parent)
+    const pId = res.data.userProfile.parent || "";
+    // ✅ Thêm await để lấy dữ liệu thực
+    const abc1 = await userApis.getStudentByParent(pId);
+    const studentId = abc1.students[0]._id;
+    console.log("🚀 ~ fetchUserData ~ studentId:", studentId)
+    const abc111 = await userApis.getListSY();
+
+    // const medicalRes = await userApis.getMedByStu(studentId);
+    // const abc11 = await userApis.getAttByStuDate(pId);
+    // const abc1121 = await userApis.getClassByStuAndSY(pId);
+    // const abc1112 = await userApis.getFbByStuAndDate(pId);
+    // const abc11111 = await userApis.getMenuByAgeAndDate(pId);
+    // const abc111111 = await userApis.getScheduleByClassAndMonth(pId);
+
+
+    console.log("🚀 ~ fetchUserData ~ abc1:", abc1)
     const { userProfile, permissionListAll } = res.data;
-    const user: User = { ...userProfile, permissionListAll };
+    console.log("🚀 ~ fetchUserData ~ abc1.parent.fullName:", abc1.parent.fullName)
+
+    const user: User = { ...userProfile, permissionListAll, fullName: abc1.parent.fullName, students: abc1.students };
     return user;
 };
 

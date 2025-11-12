@@ -17,6 +17,19 @@ export type LoginResponse = {
     };
 };
 
+export type getStudentResponse = {
+    success?: string;
+    parent?: {
+        _id?: string;
+        fullName: string;
+        phoneNumber: string;
+        email: string;
+    };
+    students?: {
+        fullName: string;
+    };
+};
+
 export interface UserProfile {
     _id: string;
     email: string;
@@ -26,10 +39,126 @@ export interface UserProfile {
     isAdmin: boolean;
     isTeacher: boolean;
     parent?: string;
+    id: string;
+    fullName: string;
+    name: string;
+    status: AccountStatus;
+    branch: string;
+    permissions: string[];
+    role: Role;
+    students: {
+        _id: string;
+        studentCode: string;
+        fullName: string;
+        dob: string;
+        idCard: string;
+        gender: string;
+        nation: string;
+        religion: string;
+    }[];
+}
+
+export enum Role {
+    Administrator = 'Administrator',
+    Accountant = 'Accountant',
+    Teacher = 'Teacher',
+    Parent = 'Parent',
+    Administrative_staff = 'Administrative staff',
+}
+
+export enum AccountStatus {
+    ACTIVE = 'ACTIVE',
+    INACTIVE = 'INACTIVE',
+}
+
+export interface StuParents {
+    parent: {
+        _id: string;
+        fullName: string;
+        phoneNumber: string;
+        email: string;
+    };
+    students: {
+        _id: string;
+        studentCode: string;
+        fullName: string;
+        dob: string;
+        idCard: string;
+        gender: string;
+        nation: string;
+        religion: string;
+    }[];
+    success?: boolean;
 }
 
 export interface User extends UserProfile {
     permissionListAll: PermissionModule[];
+}
+
+export interface StuParent extends StuParents {
+    permissionListAll: PermissionModule[];
+}
+
+export interface MedicalRecord {
+    _id: string;
+    student: {
+        _id: string;
+        studentCode: string;
+        fullName: string;
+        dob: string;
+        gender: string;
+        address: string;
+        healthCertId: string;
+    };
+    physicalDevelopment: {
+        height: number;
+        weight: number;
+        bodyMassIndex: number;
+        evaluation: string;
+    };
+    comprehensiveExamination: {
+        mentalDevelopment: string;
+        motorDevelopment: string;
+        diseasesDetected: string[];
+        abnormalSigns: string[];
+        diseaseRisk: string[];
+        notes: string;
+    };
+    conclusion: {
+        healthStatus: string;
+        advice: string;
+    };
+    class: {
+        _id: string;
+        classCode: string;
+        className: string;
+    };
+    schoolYear: {
+        _id: string;
+        schoolYear: string;
+    };
+    healthCertFiles: {
+        _id: string;
+        length: number;
+        chunkSize: number;
+        uploadDate: string;
+        filename: string;
+    };
+    createdBy: string;
+    updatedBy: string;
+    active: boolean;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+}
+
+export interface MedicalResponse {
+    data: MedicalRecord[];
+    page: {
+        totalCount: number;
+        limit: number;
+        page: number;
+    };
 }
 
 // =================================================================
