@@ -9,19 +9,10 @@ import {
   Alert,
 } from "react-native";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { login } from "../redux/authSlice";
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-type RootStackParamList = {
-  Login: undefined;
-  Home: undefined;
-};
+import { getCurrentUser, login, setToken, setUserProfile } from "../redux/authSlice";
 
 const LoginScreen: React.FC = () => {
   const dispatch = useAppDispatch();
-  type NavProp = NativeStackNavigationProp<{ Login: undefined; Home: undefined }>;
-  const navigation = useNavigation<NavProp>();
   const isLoading = useAppSelector((s) => s.auth.isLoginPending);
   const loginError = useAppSelector((s) => s.auth.loginError);
 
@@ -36,9 +27,10 @@ const LoginScreen: React.FC = () => {
       return;
     }
     try {
-      await dispatch(login({ email, password })).unwrap();
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
-      console.log("Đăng nhập thành công");
+     const response = await dispatch(login({ email, password })).unwrap();
+     const profile = await dispatch(getCurrentUser()).unwrap();
+     dispatch(setToken(response))
+     dispatch(setUserProfile(profile))
     } catch (err) {
       console.log("err", err);
     }
