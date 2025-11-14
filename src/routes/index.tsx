@@ -1,24 +1,26 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from '@react-navigation/stack';
-import LoginScreen from "../screens/LoginScreen";
-import HomeScreen from "../screens/HomeScreen";
+import AppStack from "./AppStack";
+import AuthStack from "./AuthStack";
+import { useSelector } from "react-redux";
+import { RootState } from "../redux/store";
 
-export type RootStackParamList = {
-  Login: undefined;
-  Home: undefined;
-};
-
-const Stack = createStackNavigator<RootStackParamList>();
 
 const Routes: React.FC = () => {
-  console.log('Routes rendered');
+  const { token } = useSelector((state: RootState) => state.auth);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
+
+  if (isLoading) {
+    return null; 
+  }
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Home" component={HomeScreen} options={{ title: "Home" }} />
-      </Stack.Navigator>
+      {token ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 };

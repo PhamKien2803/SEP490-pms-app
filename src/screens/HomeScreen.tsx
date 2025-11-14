@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   picker: {
-    height: 50,
+    // height: 50,
     color: '#08979c', // chữ xanh chủ đạo
   },
   header: {
