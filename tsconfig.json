@@ -1,9 +1,10 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
+    "jsx": "react-native",
     "strict": true,
     "skipLibCheck": true,
-    "module": "NodeNext", 
+    "module": "NodeNext",
     "moduleResolution": "nodenext"
   }
 }

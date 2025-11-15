@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Text,
   Dimensions,
+  TouchableOpacity, // Import TouchableOpacity để dùng cho nút đóng Modal
 } from "react-native";
 import { Button, Icon } from "react-native-elements";
 import RNModal from "react-native-modal";
@@ -27,7 +28,7 @@ const ListPostScreen: React.FC<ListPostProps> = (props) => {
   const { dataPosts, loading, fetchApi } = props;
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const { canCreate } = usePagePermission();
+  const { canCreate } = usePagePermission(); // Giữ nguyên usePagePermission
 
   const handlePostCreated = () => {
     setIsModalVisible(false);
@@ -104,7 +105,7 @@ const ListPostScreen: React.FC<ListPostProps> = (props) => {
           />
         </View>
       </View>
-      {/* )} */} {/* <--- Đã sửa: Đóng khối canCreate */}
+      {/* )} */}
     </View>
   );
 
@@ -149,15 +150,19 @@ const ListPostScreen: React.FC<ListPostProps> = (props) => {
         isVisible={isModalVisible}
         onBackdropPress={handleCancel}
         style={styles.modal}
+        propagateSwipe={true}
       >
         <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Tạo Bài Viết Mới</Text>
-          {canCreate && (
-            <CreatePost
-              onPostSuccess={handlePostCreated}
-              onCancel={handleCancel}
-            />
-          )}
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Tạo Bài Viết Mới</Text>
+            <TouchableOpacity onPress={handleCancel} style={styles.closeButton}>
+              <Icon name="close" type="antdesign" size={24} color="#555" />
+            </TouchableOpacity>
+          </View>
+          <CreatePost
+            onPostSuccess={handlePostCreated}
+            onCancel={handleCancel}
+          />
         </View>
       </RNModal>
     </View>
@@ -170,6 +175,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f2f5",
     paddingHorizontal: width * 0.05,
   },
+  // ... (Giữ nguyên styles cho ListHeaderComponent và ListEmptyComponent)
   createPostCard: {
     marginHorizontal: 0,
     marginTop: 16,
@@ -237,7 +243,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginLeft: 5,
   },
-
   loadingContainer: {
     padding: 50,
     alignItems: "center",
@@ -269,22 +274,39 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 24,
   },
+  // STYLES MỚI CHO MODAL
   modal: {
     margin: 0,
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContainer: {
     backgroundColor: "white",
-    padding: 20,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-    maxHeight: "80%",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: Dimensions.get("window").height * 0.9, // Chiều cao tối đa 90% màn hình
+    overflow: "hidden",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 10,
-    textAlign: "center",
+    color: "#333",
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalContentWrapper: {
+    // flex: 1,
+    backgroundColor: "red",
   },
 });
 
