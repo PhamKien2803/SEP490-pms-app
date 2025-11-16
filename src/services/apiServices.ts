@@ -9,8 +9,29 @@ import {
   CreatePostResponse,
   PostsResponse,
 } from "../types/post";
-import { IAttendanceCreatePayload, IAttendanceDetailResponse, IAttendanceUpdatePayload, IFeedbackCreatePayload, IFeedbackDetailResponse, IFeedbackListResponse, IFeedbackUpdatePayload, IGetTimetableTeacherResponse, ILessonDetailResponse, ILessonListResponse, ILessonPayload, IScheduleWeekResponse, ITeacherClassStudentResponse, StudentDetailResponse } from "../types/teacher";
-import { SchoolYearsListResponse } from "../types/schoolYear";
+import {
+  IAttendanceCreatePayload,
+  IAttendanceDetailResponse,
+  IAttendanceUpdatePayload,
+  IFeedbackCreatePayload,
+  IFeedbackDetailResponse,
+  IFeedbackListResponse,
+  IFeedbackUpdatePayload,
+  IGetTimetableTeacherResponse,
+  ILessonDetailResponse,
+  ILessonListResponse,
+  ILessonPayload,
+  IScheduleWeekResponse,
+  ITeacherClassStudentResponse,
+  StudentDetailResponse,
+} from "../types/teacher";
+import {
+  CreateSchoolYearDto,
+  SchoolYearListItem,
+  SchoolYearReportResponses,
+  SchoolYearsListResponse,
+  UpdateSchoolYearDto,
+} from "../types/schoolYear";
 import { ClassListResponse } from "../types/class";
 
 export const authApis = {
@@ -177,7 +198,6 @@ export const postApis = {
 };
 
 export const teacherApis = {
-
   getPDFById: async (id: string): Promise<ArrayBuffer> => {
     const response = await axiosAuth.get<ArrayBuffer>(
       apiEndPoint.GET_PDF_BY_IDS(id),
@@ -402,6 +422,61 @@ export const teacherApis = {
   }): Promise<IGetTimetableTeacherResponse> => {
     const response = await axiosAuth.get<IGetTimetableTeacherResponse>(
       apiEndPoint.GET_TIMETABLE_TEACHER,
+      { params }
+    );
+    return response.data;
+  },
+};
+
+export const schoolYearApis = {
+  getSchoolYearList: async (params: {
+    page: number;
+    limit: number;
+  }): Promise<SchoolYearsListResponse> => {
+    const response = await axiosAuth.get<SchoolYearsListResponse>(
+      apiEndPoint.GET_SCHOOLYEARS_LIST,
+      { params }
+    );
+    return response.data;
+  },
+
+  getSchoolYearById: async (id: string): Promise<SchoolYearListItem> => {
+    const response = await axiosAuth.get<SchoolYearListItem>(
+      apiEndPoint.GET_SCHOOLYEAR_BY_ID(id)
+    );
+    return response.data;
+  },
+
+  createSchoolYear: async (body: CreateSchoolYearDto): Promise<void> => {
+    await axiosAuth.post(apiEndPoint.CREATE_SCHOOLYEAR, body);
+  },
+
+  updateSchoolYear: async (
+    id: string,
+    body: UpdateSchoolYearDto
+  ): Promise<void> => {
+    await axiosAuth.put(apiEndPoint.UPDATE_SCHOOLYEAR(id), body);
+  },
+
+  deleteSchoolYear: async (id: string): Promise<void> => {
+    await axiosAuth.post(apiEndPoint.DELETE_SCHOOLYEAR(id));
+  },
+
+  endSchoolYear: async (id: string): Promise<void> => {
+    await axiosAuth.post(apiEndPoint.END_SCHOOLYEAR(id));
+  },
+
+  confirmSchoolYear: async (id: string): Promise<void> => {
+    await axiosAuth.post(apiEndPoint.CONFIRM_SCHOOLYEAR(id));
+  },
+
+  getStudentGraduatedReport: async (params: {
+    year: number;
+    page: number;
+    limit: number;
+  }): Promise<SchoolYearReportResponses> => {
+    const response = await axiosAuth.get<SchoolYearReportResponses>(
+      apiEndPoint.SCHOOLYEAR_REPORT,
       { params }
     );
     return response.data;
