@@ -40,21 +40,26 @@ export const login = createAsyncThunk<
 
 const fetchUserData = async () => {
   const res = await axiosAuth.get<ApiUserResponse>(apiEndPoint.CURRENT_USER);
-  console.log("🚀 ~ fetchUserData ~ res:", JSON.stringify(res, null, 2))
-  const pId =  res.data.userProfile.parent || ""; 
-  console.log("🚀 ~ fetchUserData ~ pId:", pId)
-  const students = await userApis.getStudentByParent(pId);
-  console.log("🚀 ~ fetchUserData ~ students:", students)
   const { userProfile, permissionListAll } = res.data;
 
-  const user: User = {
+  let user: User = {
     ...userProfile,
     permissionListAll,
-    students: students.students,
-    fullName: students.parent.fullName
   };
+
+  const pId = userProfile.parent || "";
+  if (pId) {
+    const studentsData = await userApis.getStudentByParent(pId);
+    user = {
+      ...user,
+      students: studentsData.students,
+      fullName: studentsData.parent.fullName,
+    };
+  }
+
   return user;
 };
+
 
 export const getCurrentUser = createAsyncThunk<User, void, { rejectValue: string }>
   ("auth/getCurrentUser", async (_, { rejectWithValue }) => {
