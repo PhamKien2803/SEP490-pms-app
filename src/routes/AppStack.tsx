@@ -12,6 +12,11 @@ import HomeScreen from "../screens/HomeScreen";
 
 const Tab = createBottomTabNavigator<any>();
 
+interface TabBarIconProps {
+  color: string;
+  size: number;
+}
+
 const AppStack: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   if (!user?.isTeacher) {
@@ -41,7 +46,7 @@ const AppStack: React.FC = () => {
         component={InformationStack}
         options={{
           title: "Thông tin",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size }: TabBarIconProps) => (
             <Ionicons name="person-circle" color={color} size={size} />
           ),
         }}
@@ -51,7 +56,7 @@ const AppStack: React.FC = () => {
         component={PostStack}
         options={{
           title: "Bài viết",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size }: TabBarIconProps) => (
             <Ionicons name="document-text" color={color} size={size} />
           ),
         }}
@@ -61,7 +66,7 @@ const AppStack: React.FC = () => {
         component={ConversationStack}
         options={{
           title: "Trò chuyện",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size }: TabBarIconProps) => (
             <Ionicons name="chatbubbles" color={color} size={size} />
           ),
         }}
@@ -71,7 +76,7 @@ const AppStack: React.FC = () => {
         component={SettingStack}
         options={{
           title: "Cài đặt",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size }: TabBarIconProps) => (
             <Ionicons name="settings" color={color} size={size} />
           ),
         }}
