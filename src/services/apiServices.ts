@@ -16,6 +16,9 @@ import {
   CreatePostResponse,
   PostsResponse,
 } from "../types/post";
+import { IAttendanceCreatePayload, IAttendanceDetailResponse, IAttendanceUpdatePayload, IFeedbackCreatePayload, IFeedbackDetailResponse, IFeedbackListResponse, IFeedbackUpdatePayload, IGetTimetableTeacherResponse, ILessonDetailResponse, ILessonListResponse, ILessonPayload, IScheduleWeekResponse, ITeacherClassStudentResponse, StudentDetailResponse } from "../types/teacher";
+import { SchoolYearsListResponse } from "../types/schoolYear";
+import { ClassListResponse } from "../types/class";
 
 export const authApis = {
   login: async (body: LoginRequest): Promise<LoginResponse> => {
@@ -189,6 +192,238 @@ export const postApis = {
       }
     );
 
+    return response.data;
+  },
+};
+
+export const teacherApis = {
+
+  getPDFById: async (id: string): Promise<ArrayBuffer> => {
+    const response = await axiosAuth.get<ArrayBuffer>(
+      apiEndPoint.GET_PDF_BY_IDS(id),
+      {
+        responseType: "arraybuffer",
+      }
+    );
+    return response.data;
+  },
+
+  getClassAndStudentByTeacher: async (
+    teacherId: string,
+    schoolYearId: string
+  ): Promise<ITeacherClassStudentResponse> => {
+    const response = await axiosAuth.get<ITeacherClassStudentResponse>(
+      apiEndPoint.GET_CLASS_AND_STUDENT_BY_TEACHER(teacherId),
+      {
+        params: { schoolYearId },
+      }
+    );
+    return response.data;
+  },
+
+  getSchoolYearList: async (params: {
+    page: number;
+    limit: number;
+  }): Promise<SchoolYearsListResponse> => {
+    const response = await axiosAuth.get<SchoolYearsListResponse>(
+      apiEndPoint.GET_SCHOOLYEARS_LIST,
+      { params }
+    );
+    return response.data;
+  },
+
+  getAttendanceById: async (id: string): Promise<IAttendanceDetailResponse> => {
+    const response = await axiosAuth.get<IAttendanceDetailResponse>(
+      apiEndPoint.GET_ATTENDANCE_BY_ID(id)
+    );
+    return response.data;
+  },
+
+  getAttendanceByClassAndSchoolYear: async (
+    classId: string,
+    schoolYearId: string
+  ): Promise<IAttendanceDetailResponse> => {
+    const response = await axiosAuth.get<IAttendanceDetailResponse>(
+      apiEndPoint.GET_ATTENDANCE_BY_CLASS_AND_SCHOOLYEAR(classId, schoolYearId)
+    );
+    return response.data;
+  },
+
+  getAttendanceByClassAndDate: async (
+    classId: string,
+    date: string
+  ): Promise<IAttendanceDetailResponse> => {
+    const response = await axiosAuth.get<IAttendanceDetailResponse>(
+      apiEndPoint.GET_ATTENDANCE_BY_CLASS_AND_DATE(classId, date)
+    );
+    return response.data;
+  },
+
+  createAttendance: async (
+    payload: IAttendanceCreatePayload
+  ): Promise<IAttendanceDetailResponse> => {
+    const response = await axiosAuth.post<IAttendanceDetailResponse>(
+      apiEndPoint.CREATE_ATTENDANCE,
+      payload
+    );
+    return response.data;
+  },
+
+  updateAttendance: async (
+    id: string,
+    payload: IAttendanceUpdatePayload
+  ): Promise<IAttendanceDetailResponse> => {
+    const response = await axiosAuth.put<IAttendanceDetailResponse>(
+      apiEndPoint.UPDATE_ATTENDANCE(id),
+      payload
+    );
+    return response.data;
+  },
+
+  deleteAttendance: async (id: string): Promise<void> => {
+    await axiosAuth.post(apiEndPoint.DELETE_ATTENDANCE(id));
+  },
+
+  getStudentDetails: async (id: string): Promise<StudentDetailResponse> => {
+    const response = await axiosAuth.get<StudentDetailResponse>(
+      apiEndPoint.GET_STUDENT_DETAILS(id)
+    );
+    return response.data;
+  },
+
+  getClassList: async (params: {
+    year: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ClassListResponse> => {
+    const response = await axiosAuth.get<ClassListResponse>(
+      apiEndPoint.GET_CLASS_LIST,
+      {
+        params,
+      }
+    );
+    return response.data;
+  },
+
+  getFeedbackByClassAndDate: async (
+    classId: string,
+    date: string
+  ): Promise<IFeedbackListResponse> => {
+    const response = await axiosAuth.get<IFeedbackListResponse>(
+      apiEndPoint.GET_FEEDBACK_BY_CLASS_AND_DATE,
+      {
+        params: { classId, date },
+      }
+    );
+    return response.data;
+  },
+
+  getFeedbackById: async (id: string): Promise<IFeedbackDetailResponse> => {
+    const response = await axiosAuth.get<IFeedbackDetailResponse>(
+      apiEndPoint.GET_FEEDBACK_BY_ID(id)
+    );
+    return response.data;
+  },
+
+  createFeedback: async (
+    payload: IFeedbackCreatePayload
+  ): Promise<IFeedbackDetailResponse[]> => {
+    const response = await axiosAuth.post<IFeedbackDetailResponse[]>(
+      apiEndPoint.CREATE_FEEDBACK,
+      payload
+    );
+    return response.data;
+  },
+
+  updateFeedback: async (
+    id: string,
+    payload: IFeedbackUpdatePayload
+  ): Promise<IFeedbackDetailResponse> => {
+    const response = await axiosAuth.put<IFeedbackDetailResponse>(
+      apiEndPoint.UPDATE_FEED_BACK(id),
+      payload
+    );
+    return response.data;
+  },
+
+  deleteFeedback: async (id: string): Promise<void> => {
+    await axiosAuth.post(apiEndPoint.DELETE_FEED_BACK(id));
+  },
+
+  getListLesson: async (params: {
+    teacherId: string;
+    schoolYear: string;
+    limit: string;
+    page: string;
+  }): Promise<ILessonListResponse> => {
+    const response = await axiosAuth.get<ILessonListResponse>(
+      apiEndPoint.GET_LIST_LESSON,
+      { params }
+    );
+    return response.data;
+  },
+
+  getScheduleWeek: async (params: {
+    teacherId: string;
+    month: string;
+    week: string;
+  }): Promise<IScheduleWeekResponse> => {
+    const response = await axiosAuth.get<IScheduleWeekResponse>(
+      apiEndPoint.GET_SCHEDULE_WEEK,
+      { params }
+    );
+    return response.data;
+  },
+
+  getLessonById: async (id: string): Promise<ILessonDetailResponse> => {
+    const response = await axiosAuth.get<ILessonDetailResponse>(
+      apiEndPoint.GET_LESSON_BY_ID(id)
+    );
+    return response.data;
+  },
+
+  createLesson: async (
+    payload: ILessonPayload
+  ): Promise<ILessonDetailResponse> => {
+    const response = await axiosAuth.post<ILessonDetailResponse>(
+      apiEndPoint.CREATE_LESSON,
+      payload
+    );
+    return response.data;
+  },
+
+  updateLesson: async (
+    id: string,
+    payload: ILessonPayload
+  ): Promise<ILessonDetailResponse> => {
+    const response = await axiosAuth.put<ILessonDetailResponse>(
+      apiEndPoint.UPDATE_LESSON(id),
+      payload
+    );
+    return response.data;
+  },
+
+  sendLesson: async (id: string): Promise<void> => {
+    await axiosAuth.post(apiEndPoint.SEND_LESSON(id));
+  },
+
+  approveLesson: async (id: string): Promise<void> => {
+    await axiosAuth.post(apiEndPoint.APPROVE_LESSON(id));
+  },
+
+  rejectLesson: async (id: string): Promise<void> => {
+    await axiosAuth.post(apiEndPoint.REJECT_LESSON(id));
+  },
+
+  getTimetableTeacher: async (params: {
+    teacherId: string;
+    schoolYear: string;
+    month: string;
+  }): Promise<IGetTimetableTeacherResponse> => {
+    const response = await axiosAuth.get<IGetTimetableTeacherResponse>(
+      apiEndPoint.GET_TIMETABLE_TEACHER,
+      { params }
+    );
     return response.data;
   },
 };
