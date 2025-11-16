@@ -7,20 +7,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FontAwesome5, MaterialCommunityIcons, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import type { User, Student } from '../types/user'; // User có students: Student[]
-
-type RootStackParamList = {
-  Login: undefined;
-  Home: undefined;
-  Schedule: { student: Student };
-  Menu: { student: Student };
-  Evaluation: { student: Student };
-  Attendance: { student: Student };
-  HealthProfile: { student: Student };
-};
+import { RootStackParamList } from '../routes/AuthStack';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
-type StudentScreen = 'Schedule' | 'Menu' | 'Evaluation' | 'Attendance' | 'HealthProfile';
+type StudentScreen = 'Schedule' | 'Menu' | 'Feedback' | 'Attendance' | 'HealthProfile';
 
 interface MenuItem {
   id: string;
@@ -33,7 +24,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { id: '1', name: 'Thời khóa biểu', icon: 'calendar-alt', iconSet: 'FontAwesome5', screen: 'Schedule' },
   { id: '2', name: 'Thực đơn tuần', icon: 'food-fork-drink', iconSet: 'MaterialCommunityIcons', screen: 'Menu' },
-  { id: '3', name: 'Đánh giá của bé', icon: 'star', iconSet: 'FontAwesome5', screen: 'Evaluation' },
+  { id: '3', name: 'Đánh giá của bé', icon: 'star', iconSet: 'FontAwesome5', screen: 'Feedback' },
   { id: '4', name: 'Điểm danh của bé', icon: 'clipboard-list', iconSet: 'FontAwesome5', screen: 'Attendance' },
   { id: '5', name: 'Hồ sơ sức khỏe', icon: 'heartbeat', iconSet: 'FontAwesome5', screen: 'HealthProfile' },
   { id: '6', name: 'Đăng xuất', icon: 'exit-to-app', iconSet: 'MaterialIcons', screen: 'Login' },
@@ -51,12 +42,12 @@ const HomeScreen: React.FC = () => {
     const fetchUser = async () => {
       try {
         const resultAction = await dispatch(getCurrentUser());
-
         if (getCurrentUser.fulfilled.match(resultAction)) {
           const currentUser: User = resultAction.payload;
+          console.log("🚀 ~ fetchUser ~ currentUser:", currentUser)
           setUser(currentUser);
           if (currentUser.students && currentUser.students.length > 0) {
-            setSelectedStudent(currentUser.students[0]); // mặc định học sinh đầu tiên
+            setSelectedStudent(currentUser.students[0]);
           }
         } else if (getCurrentUser.rejected.match(resultAction)) {
           console.error('Failed to fetch user:', resultAction.payload);
@@ -100,7 +91,7 @@ const HomeScreen: React.FC = () => {
     }
 
     // Navigate các screen có student
-    if (['Schedule', 'Menu', 'Evaluation', 'Attendance', 'HealthProfile'].includes(item.screen)) {
+    if (['Schedule', 'Menu', 'Feedback', 'Attendance', 'HealthProfile'].includes(item.screen)) {
       navigation.navigate(item.screen as StudentScreen, { student: selectedStudent });
     }
   };
@@ -157,9 +148,7 @@ const HomeScreen: React.FC = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Xin chào!</Text>
         <Text style={styles.subtitle}>{user?.fullName || 'Phụ huynh'}</Text>
-        <Text style={styles.welcomeText}>Chào mừng bạn trở lại!</Text>
       </View>
 
       {/* Student selector */}
@@ -169,7 +158,7 @@ const HomeScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.menuGrid} showsVerticalScrollIndicator={false}>
         {menuItems.map(renderMenuItem)}
       </ScrollView>
- 
+
       <Text style={styles.footerText}>Trường Mầm Non Ươm Mầm Tương Lai</Text>
     </View>
   );
@@ -182,7 +171,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   picker: {
-    // height: 50,
+    height: 50,
     color: '#08979c', // chữ xanh chủ đạo
   },
   header: {

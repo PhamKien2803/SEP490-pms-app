@@ -1,5 +1,5 @@
 import { AxiosError } from "axios";
-import { LoginRequest, LoginResponse, MedicalResponse, StuParent, StuParents, User } from "../types/auth";
+import { AttendanceResponse, FeedbackApiResponse, LoginRequest, LoginResponse, MedicalResponse, Menu, MonthlySchedule, StuParent, StuParents, User } from "../types/auth";
 import { apiEndPoint } from "./api";
 import axiosAuth from "./axiosAuth";
 import { messages } from "../constants/message";
@@ -44,14 +44,14 @@ export const userApis = {
         );
         return response.data;
     },
-    getScheduleByClassAndMonth: async (classId: string, month: number): Promise<User[]> => {
-        const response = await axiosAuth.get<User[]>(apiEndPoint.SC_BY_CLASS_MONTH, {
+    getScheduleByClassAndMonth: async (classId: string, month: number): Promise<MonthlySchedule[]> => {
+        const response = await axiosAuth.get<MonthlySchedule[]>(apiEndPoint.SC_BY_CLASS_MONTH, {
             params: { classId, month },
         });
         return response.data;
     },
-    getAttByStuDate: async (studentId: string, date: string): Promise<User[]> => {
-        const response = await axiosAuth.get<User[]>(apiEndPoint.ATT_BY_STU_DATE, {
+    getAttByStuDate: async (studentId: string, date: string): Promise<AttendanceResponse> => {
+        const response = await axiosAuth.get<AttendanceResponse>(apiEndPoint.ATT_BY_STU_DATE, {
             params: { studentId, date },
         });
         return response.data;
@@ -62,8 +62,8 @@ export const userApis = {
         });
         return response.data;
     },
-    getFbByStuAndDate: async (studentId: string, date: string): Promise<User[]> => {
-        const response = await axiosAuth.get<User[]>(apiEndPoint.FB_BY_STU_DATE, {
+    getFbByStuAndDate: async (studentId: string, date: string): Promise<FeedbackApiResponse> => {
+        const response = await axiosAuth.get<FeedbackApiResponse>(apiEndPoint.FB_BY_STU_DATE, {
             params: { studentId, date },
         });
         return response.data;
@@ -75,11 +75,11 @@ export const userApis = {
         );
         return response.data;
     },
-    getMenuByAgeAndDate: async (studentId: string, date: string): Promise<User[]> => {
-        const response = await axiosAuth.get<User[]>(apiEndPoint.MENU_BY_AGE_DATE, {
+    getMenuByAgeAndDate: async (studentId: string, date: string): Promise<Menu> => {
+        const response = await axiosAuth.get<Menu>(apiEndPoint.MENU_BY_AGE_DATE, {
             params: { studentId, date },
         });
-        return response.data;
+        return response.data; // res.data là Menu object
     },
     getListSY: async (): Promise<User[]> => {
         const response = await axiosAuth.get<User[]>(
