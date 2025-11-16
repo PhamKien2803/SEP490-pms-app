@@ -70,13 +70,9 @@ const ListPostScreen: React.FC<ListPostProps> = (props) => {
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>GV</Text>
           </View>
-          <Button
-            title="Bạn muốn chia sẻ điều gì hôm nay?"
-            type="outline"
-            buttonStyle={styles.createPostButton}
-            titleStyle={styles.createPostButtonTitle}
-            onPress={showModal}
-          />
+          <TouchableOpacity style={styles.createPostButton} onPress={showModal}>
+            <Text>Bạn muốn chia sẻ điều gì hôm nay?</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.contentDivider} />
@@ -210,10 +206,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f0f2f5",
     borderRadius: 20,
-    height: 50,
+    height: 38,
     borderColor: "#e0e0e0",
-    justifyContent: "flex-start",
     paddingLeft: 20,
+    justifyContent: "center",
   },
   createPostButtonTitle: {
     color: "#606060",

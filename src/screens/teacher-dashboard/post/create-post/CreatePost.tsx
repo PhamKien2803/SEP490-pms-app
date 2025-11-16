@@ -14,7 +14,7 @@ import { Button, Icon } from "react-native-elements";
 import Toast from "react-native-toast-message";
 import * as ImagePicker from "expo-image-picker";
 
-// Import các hooks và types của bạn
+// Import các hooks và types của bạn (giả định các đường dẫn này là chính xác)
 import { useCurrentUser } from "../../../../hooks/useCurrentUser";
 import { postApis } from "../../../../services/apiServices";
 import { CreatePostParams } from "../../../../types/post";
@@ -30,7 +30,7 @@ interface CreatePostProps {
 interface RNFile {
   uri: string;
   name: string;
-  type: string;
+  type: string; // Ví dụ: 'image/jpeg', 'video/mp4'
 }
 
 const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
@@ -51,21 +51,22 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
       return;
     }
 
-    // 1. KIỂM TRA VÀ YÊU CẦU QUYỀN TRUY CẬP
     const { status } = await ImagePicker.getMediaLibraryPermissionsAsync();
+    let finalStatus = status;
 
     if (status !== "granted") {
       const { status: newStatus } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
+      finalStatus = newStatus;
+    }
 
-      if (newStatus !== "granted") {
-        Alert.alert(
-          "Không có quyền",
-          "Vui lòng cấp quyền truy cập thư viện ảnh trong cài đặt thiết bị để tiếp tục.",
-          [{ text: "OK" }]
-        );
-        return;
-      }
+    if (finalStatus !== "granted") {
+      Alert.alert(
+        "Không có quyền",
+        "Vui lòng cấp quyền truy cập thư viện ảnh trong cài đặt thiết bị để tiếp tục.",
+        [{ text: "OK" }]
+      );
+      return;
     }
 
     // 2. CHỌN ẢNH TỪ THƯ VIỆN
@@ -75,21 +76,21 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
       selectionLimit: availableSlots,
       quality: 0.8,
     });
-
+    console.log("result=====", result);
     if (!result.canceled && result.assets) {
       const newFiles: RNFile[] = result.assets
         .map((asset) => {
-          // FIX TS: Sử dụng Type Assertion (as any) để truy cập mediaType
-          // và sử dụng thuộc tính mimeType hoặc tạo type dự phòng
-          const assetAny = asset as any;
+          const assetAny = asset as any; // Sử dụng Type Assertion để xử lý kiểu dữ liệu
 
-          // Xác định loại file dựa trên mediaType hoặc mimeType
+          // Xác định loại file/mimeType
           const isVideo =
-            assetAny.mediaType === ImagePicker.MediaType.Video ||
+            assetAny.mediaType === "video" ||
             asset.mimeType?.startsWith("video/");
-          const fileType = isVideo ? "video" : "image";
+
           const fileExtension =
             asset.uri.split(".").pop() || (isVideo ? "mp4" : "jpeg");
+          const fileType =
+            asset.mimeType || `${isVideo ? "video" : "image"}/${fileExtension}`;
 
           return {
             uri: asset.uri,
@@ -97,16 +98,21 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
               asset.fileName ||
               asset.uri.split("/").pop() ||
               `file.${fileExtension}`,
-            type: asset.mimeType || `${fileType}/${fileExtension}`,
+            type: fileType,
           };
         })
         .filter((file) => file.uri !== "");
 
+      console.log("newFiles", newFiles);
+
       setFileList((prev) => [...prev, ...newFiles]);
+
       Toast.show({
         type: "success",
         text1: `Đã thêm ${newFiles.length} file vào danh sách.`,
       });
+      // LOG ĐỂ KIỂM TRA LẦN CUỐI
+      console.log("Danh sách File sau khi chọn:", [...fileList, ...newFiles]);
     }
   };
   // ---------------------------------------------------------------------
@@ -134,6 +140,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
     setIsLoading(true);
 
     try {
+      // Logic gọi API tạo post và upload album (giữ nguyên)
       const classResponse = await postApis.getClass(user.staff);
       const classId = classResponse?.classes?._id;
 
@@ -161,6 +168,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
         const formData = new FormData();
         formData.append("postId", postId);
         filesToUpload.forEach((file) => {
+          // Lưu ý: React Native yêu cầu định dạng `name`, `uri`, `type`
           formData.append("album", {
             uri: file.uri,
             name: file.name,
@@ -224,15 +232,18 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
           {fileList.map((file, index) => (
             <View key={index} style={styles.fileItem}>
               {file.type.startsWith("video/") ? (
-                <View style={styles.fileThumbnail}>
+                // Nếu là video, hiển thị icon
+                <View style={styles.videoThumbnailContainer}>
                   <Icon
                     name="video-camera"
                     type="font-awesome"
                     size={30}
                     color="#333"
                   />
+                  <Text style={styles.videoText}>Video</Text>
                 </View>
               ) : (
+                // Nếu là ảnh, hiển thị ảnh
                 <Image
                   source={{ uri: file.uri }}
                   style={styles.fileThumbnail}
@@ -331,8 +342,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#d9d9d9",
-    justifyContent: "center",
-    alignItems: "center",
+    // Giữ nguyên: justifyContent: "center", alignItems: "center",
     marginRight: 10,
     marginBottom: 10,
     position: "relative",
@@ -343,9 +353,20 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 8,
-    // Thêm các style căn giữa nếu là View (cho icon video)
+    // FIX: THÊM resizeMode ĐỂ ĐẢM BẢO ẢNH HIỂN THỊ TRONG KHUNG 80x80
+    resizeMode: "cover",
+  },
+  videoThumbnailContainer: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
+  },
+  videoText: {
+    fontSize: 10,
+    color: "#333",
+    marginTop: 2,
   },
   removeFileButton: {
     position: "absolute",

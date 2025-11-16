@@ -40,16 +40,6 @@ function TeacherNews() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Icon
-          name="container"
-          type="antdesign"
-          size={24}
-          color="#1890ff"
-          style={styles.icon}
-        />
-        <Text style={styles.title}>Danh sách bài viết</Text>
-      </View>
       <View style={styles.divider} />
       <ListPostScreen
         fetchApi={fetchPosts}
