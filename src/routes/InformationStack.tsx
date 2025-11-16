@@ -1,6 +1,8 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import Information from "../screens/teacher-dashboard/information/Information";
+import TeacherHomeScreen from "../screens/teacher-dashboard/TeacherDashboard";
+import TimeTable from "../screens/teacher-dashboard/time-table/TimeTable";
 
 export type InformationStackParamList = {
   InformationMain: undefined;
@@ -18,7 +20,7 @@ const InformationStack: React.FC = () => {
     >
       <Stack.Screen
         name="InformationMain"
-        component={Information}
+        component={TimeTable}
         options={{ title: "Thông tin cá nhân" }}
       />
     </Stack.Navigator>
