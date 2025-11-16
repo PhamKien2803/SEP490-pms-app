@@ -91,6 +91,81 @@ export interface StuParents {
   success?: boolean;
 }
 
+export type Activity = {
+  _id: string;
+  startTime: number; // Số phút từ 00:00
+  endTime: number;
+  activityCode: string;
+  activityName: string;
+  type: string;
+  tittle?: string; // Tiêu đề cụ thể (không bắt buộc)
+  category?: string; // Danh mục (không bắt buộc)
+};
+
+// Thông tin ngày trong tháng
+export interface ScheduleDay {
+  _id: string;
+  date: string; // ISO string
+  dayName: string;
+  activities: Activity[];
+  isHoliday: boolean;
+  notes: string;
+}
+
+// Thông tin lớp
+export interface ClassInfo {
+  _id: string;
+  classCode: string;
+  className: string;
+}
+
+// Bản ghi lịch tháng
+export interface MonthlySchedule {
+  _id: string;
+  schoolYear: string;
+  class: ClassInfo;
+  month: number;
+  scheduleDays: ScheduleDay[];
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+type TeacherInfo = {
+  _id: string;
+  fullName: string;
+  phoneNumber: string;
+};
+
+type StudentInfo = {
+  _id: string;
+  studentCode: string;
+  fullName: string;
+  gender: string;
+};
+
+// Kiểu dữ liệu cho trường 'student' trong response
+// API trả về document con của Mongoose, dữ liệu sạch nằm trong _doc
+type StudentAttendanceRecord = {
+  status: string;
+  note?: string;
+  student: StudentInfo;
+  timeCheckIn: string | null; // Thêm trường này
+  timeCheckOut: string | null; // Thêm trường này
+  guardian: string | null;
+};
+
+// Kiểu dữ liệu cho toàn bộ API response
+export type AttendanceResponse = {
+  success: boolean;
+  class: ClassInfo;
+  teacher: TeacherInfo;
+  date: string;
+  generalNote: string;
+  student: StudentAttendanceRecord; // Cập nhật type ở đây
+};
+
 export interface User extends UserProfile {
   permissionListAll: PermissionModule[];
 }
@@ -161,9 +236,120 @@ export interface MedicalResponse {
   };
 }
 
-// =================================================================
-// SECTION: Permissions & Roles Types
-// =================================================================
+
+export interface Ingredient {
+  name: string;
+  gram: number;
+  unit: string;
+  calories: number;
+  protein: number;
+  lipid: number;
+  carb: number;
+}
+
+export interface Food {
+  _id: string;
+  foodName: string;
+  totalCalories: number;
+  ingredients: Ingredient[];
+}
+
+export interface Meal {
+  mealType: string;
+  foods: { food: Food }[];
+  totalCalo: number;
+  totalProtein: number;
+  totalLipid: number;
+  totalCarb: number;
+}
+
+export interface DayMenu {
+  date: string;
+  meals: Meal[];
+  totalCalo: number;
+  totalProtein: number;
+  totalLipid: number;
+  totalCarb: number;
+}
+
+export interface Menu {
+  _id: string;
+  weekStart: string;
+  weekEnd: string;
+  ageGroup: string;
+  days: DayMenu[];
+  totalCalo: number;
+  totalProtein: number;
+  totalLipid: number;
+  totalCarb: number;
+  state: string;
+  active: boolean;
+  notes: string;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+type EatingFeedback = {
+  breakfast: string;
+  lunch: string;
+  snack: string;
+  note: string;
+};
+
+type SleepingFeedback = {
+  duration: string;
+  quality: string;
+  note: string;
+};
+
+type HygieneFeedback = {
+  toilet: string;
+  handwash: string;
+  note: string;
+};
+
+type LearningFeedback = {
+  focus: string;
+  participation: string;
+  note: string;
+};
+
+type SocialFeedback = {
+  friendInteraction: string;
+  emotionalState: string;
+  behavior: string;
+  note: string;
+};
+
+type HealthFeedback = {
+  note: string;
+};
+
+type FeedbackRecord = {
+  _id: string;
+  studentId: StudentInfo;
+  classId: ClassInfo;
+  teacherId: TeacherInfo;
+  date: string;
+  eating: EatingFeedback;
+  sleeping: SleepingFeedback;
+  hygiene: HygieneFeedback;
+  learning: LearningFeedback;
+  social: SocialFeedback;
+  health: HealthFeedback;
+  dailyHighlight: string;
+  teacherNote: string;
+  reminders: string[];
+  createdAt: string;
+};
+
+export type FeedbackApiResponse = {
+  message: string;
+  data: FeedbackRecord; 
+};
 
 export interface ActionPermission {
   name: string;

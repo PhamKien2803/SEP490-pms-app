@@ -1,6 +1,7 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { Student } from './user';
 
 export type RootState = {
   auth: {
@@ -20,11 +21,17 @@ export type AppTabParamList = {
 
 export type AuthStackParamList = {
   Login: undefined;
+  Home: undefined;
+  Schedule: undefined;
+  Menu: { student: Student };
+  Feedback: undefined;
+  Attendance: undefined;
+  HealthProfile: undefined;
 };
 
 export type RootStackParamList = {
   AuthStack: NavigatorScreenParams<AuthStackParamList>;
-  AppStack: NavigatorScreenParams<AppTabParamList>;    
+  AppStack: NavigatorScreenParams<AppTabParamList>;
 };
 
 

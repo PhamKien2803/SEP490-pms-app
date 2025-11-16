@@ -59,7 +59,7 @@ axiosAuth.interceptors.response.use(
         }
 
         if (!error?.response?.data?.silent) {
-            Alert.alert('Yêu cầu thất bại', errorMessage);
+            // Alert.alert('Yêu cầu thất bại', errorMessage);
         }
 
         return Promise.reject(errorMessage);

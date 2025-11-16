@@ -40,39 +40,41 @@ export const login = createAsyncThunk<
 
 const fetchUserData = async () => {
   const res = await axiosAuth.get<ApiUserResponse>(apiEndPoint.CURRENT_USER);
+  console.log("🚀 ~ fetchUserData ~ res:", JSON.stringify(res, null, 2))
+  const pId =  res.data.userProfile.parent || ""; 
+  console.log("🚀 ~ fetchUserData ~ pId:", pId)
+  const students = await userApis.getStudentByParent(pId);
+  console.log("🚀 ~ fetchUserData ~ students:", students)
   const { userProfile, permissionListAll } = res.data;
 
   const user: User = {
     ...userProfile,
     permissionListAll,
-    fullName: "",
+    students: students.students,
+    fullName: students.parent.fullName
   };
   return user;
 };
 
-export const getCurrentUser = createAsyncThunk<
-  User,
-  void,
-  { rejectValue: string }
->("auth/getCurrentUser", async (_, { rejectWithValue }) => {
-  try {
-    return await fetchUserData();
-  } catch (err: any) {
-    return rejectWithValue("Không thể tải thông tin người dùng");
-  }
-});
+export const getCurrentUser = createAsyncThunk<User, void, { rejectValue: string }>
+  ("auth/getCurrentUser", async (_, { rejectWithValue }) => {
+    try {
+      return await fetchUserData();
+    } catch (err: any) {
+      console.log("🚀 ~ err:", err)
+      return rejectWithValue("Không thể tải thông tin người dùng");
+    }
+  });
 
-export const forceRefetchUser = createAsyncThunk<
-  User,
-  void,
-  { rejectValue: string }
->("auth/forceRefetchUser", async (_, { rejectWithValue }) => {
-  try {
-    return await fetchUserData();
-  } catch (err: any) {
-    return rejectWithValue("Không thể tải thông tin người dùng");
-  }
-});
+export const forceRefetchUser = createAsyncThunk<User, void, { rejectValue: string }>
+  ("auth/forceRefetchUser", async (_, { rejectWithValue }) => {
+    try {
+      return await fetchUserData();
+    } catch (err: any) {
+      console.log("🚀 ~ err:", err)
+      return rejectWithValue("Không thể tải thông tin người dùng");
+    }
+  });
 
 function buildPermissionsMap(
   permissionListAll: PermissionModule[]
