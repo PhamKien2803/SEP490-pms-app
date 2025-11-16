@@ -2,49 +2,58 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import { RootStackParamList } from '../../routes';
+import { RootStackParamList } from '../../types/navigation';
+
+interface MenuItemType {
+    id: string;
+    title: string;
+    icon: keyof typeof Ionicons.glyphMap; 
+    screen: keyof RootStackParamList | string;
+}
+
+interface MenuItemProps {
+    item: MenuItemType;
+    navigation: StackScreenProps<RootStackParamList, 'TeacherHomeStack'>['navigation']; 
+}
 
 type TeacherHomeScreenProps = StackScreenProps<RootStackParamList, 'TeacherHomeStack'>; 
 
-// --- Dữ liệu Menu Chức năng ---
-const teacherMenuItems = [
-    { id: '1', title: 'Trang chủ', icon: 'home-outline', screen: 'Dashboard' },
-    { id: '2', title: 'Quản lý bài đăng', icon: 'newspaper-outline', screen: 'PostManagement' },
-    { id: '3', title: 'Thông tin lớp học', icon: 'people-outline', screen: 'ClassInfo' },
-    { id: '4', title: 'Điểm danh', icon: 'checkmark-done-circle-outline', screen: 'Attendance' },
-    { id: '5', title: 'Đánh giá học sinh', icon: 'star-outline', screen: 'StudentEvaluation' },
-    { id: '6', title: 'Thời khóa biểu', icon: 'calendar-outline', screen: 'Schedule' },
-    { id: '7', title: 'Báo giảng', icon: 'book-outline', screen: 'LessonReport' },
+const teacherMenuItems: MenuItemType[] = [
+    { id: '1', title: 'Thông tin lớp học', icon: 'people-outline', screen: 'ClassInfo' },
+    { id: '2', title: 'Điểm danh', icon: 'checkmark-done-circle-outline', screen: 'Attendance' },
+    { id: '3', title: 'Đánh giá học sinh', icon: 'star-outline', screen: 'StudentEvaluation' },
+    { id: '4', title: 'Thời khóa biểu', icon: 'calendar-outline', screen: 'Schedule' },
 ];
-const MenuItem = ({ item, navigation }) => (
+
+const MenuItem: React.FC<MenuItemProps> = ({ item, navigation }) => (
     <TouchableOpacity
         style={styles.menuItem}
         onPress={() => {
-            // Log ra tên màn hình và điều hướng (cần định nghĩa các màn hình này trong TeacherStack)
-            console.log(`Navigating to: ${item.screen}`);
-            // navigation.navigate(item.screen as never); // Dùng 'as never' tạm thời hoặc định nghĩa chính xác types
+            if (typeof item.screen === 'string' && item.screen in (navigation.getState().routeNames)) {
+                navigation.navigate(item.screen as keyof RootStackParamList); 
+            } else {
+                console.warn(`Màn hình "${item.screen}" không được tìm thấy trong Stack.`);
+            }
         }}
     >
-        <Ionicons name={item.icon as any} size={28} color="#007AFF" style={styles.icon} />
+        <Ionicons name={item.icon} size={28} color="#007AFF" style={styles.icon} /> 
         <Text style={styles.title}>{item.title}</Text>
         <Ionicons name="chevron-forward-outline" size={24} color="#C4C4C4" />
     </TouchableOpacity>
 );
 
-// --- Component Màn hình chính ---
 const TeacherHomeScreen: React.FC<TeacherHomeScreenProps> = ({ navigation }) => {
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>Quản Lý Giáo Viên</Text>
+            <Text style={styles.header}>Quản Lý</Text>
             
             <FlatList
                 data={teacherMenuItems}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <MenuItem item={item} navigation={navigation} />}
+                renderItem={({ item }) => <MenuItem item={item} navigation={navigation} />} 
                 contentContainerStyle={styles.listContainer}
             />
             
-            <Text style={styles.note}>Các chức năng chi tiết sẽ được phát triển trong các màn hình riêng.</Text>
         </View>
     );
 };
@@ -53,7 +62,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f5f5f5',
-        paddingTop: 50, // Điều chỉnh nếu không dùng headerShown: false
+        paddingTop: 50, 
     },
     header: {
         fontSize: 24,
