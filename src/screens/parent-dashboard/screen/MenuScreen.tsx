@@ -7,16 +7,16 @@ import {
   ActivityIndicator,
   SafeAreaView,
   Alert,
+  TouchableOpacity,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-// Thêm import cho icon
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { userApis } from "../../../services/apiServices";
 import { AuthStackParamList } from "../../../routes/AuthStack";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Menu">;
 
+// --- Định nghĩa Types ---
 type Ingredient = {
   name: string;
   gram: number;
@@ -56,150 +56,129 @@ const MenuScreen: React.FC<Props> = ({ route, navigation }) => {
   const { student } = route.params;
   const studentId = student._id;
 
-  const dob = new Date(student.dob);
-  const today = new Date();
-
-  // Tính tuổi
-  let age = today.getFullYear() - dob.getFullYear();
-  const m = today.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
-
-  // Nhóm tuổi
-  let ageCategory: string;
-  if (age >= 1 && age <= 3) ageCategory = "1-3 tuổi";
-  else ageCategory = "4-5 tuổi";
-
-  const [weekOptions, setWeekOptions] = useState<{ start: string; end: string }[]>(
-    []
-  );
-  const [selectedWeek, setSelectedWeek] = useState<{
-    start: string;
-    end: string;
-  } | null>(null);
+  // State quản lý ngày bắt đầu của tuần đang chọn (Thứ 2)
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(new Date());
   const [menu, setMenu] = useState<Menu | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Hiển thị ngày từ Thứ 2 → Chủ nhật
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const days = [
-      "Thứ 2",
-      "Thứ 3",
-      "Thứ 4",
-      "Thứ 5",
-      "Thứ 6",
-      "Thứ 7",
-      "Chủ nhật",
-    ];
-    let dayIndex = date.getDay() - 1;
-    if (dayIndex < 0) dayIndex = 6;
-    const dayName = days[dayIndex];
+  // --- Helper Functions ---
+
+  // Lấy ngày Thứ 2 của tuần chứa ngày `d`
+  const getMonday = (d: Date) => {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    return new Date(date.setDate(diff));
+  };
+
+  // Format ngày để hiển thị (DD/MM/YYYY)
+  const formatDateDisplay = (date: Date) => {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-    return `${dayName}, ${day}/${month}/${year}`;
+    return `${day}/${month}/${year}`;
   };
 
-  // Sinh tuần của một năm, tuần bắt đầu từ Thứ 2
-  const generateWeeks = (year: number) => {
-    const weeks: { start: string; end: string }[] = [];
-
-    let startDate = new Date(year, 0, 1);
-    const day = startDate.getDay();
-    const diffToMonday = day === 0 ? 1 : 8 - day; // Handle Sunday as 0
-    startDate.setDate(startDate.getDate() + diffToMonday);
-
-    while (startDate.getFullYear() === year) {
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
-
-      if (endDate.getFullYear() > year) {
-        endDate.setFullYear(year, 11, 31);
-      }
-
-      const format = (d: Date) =>
-        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-          2,
-          "0"
-        )}-${String(d.getDate()).padStart(2, "0")}`;
-
-      weeks.push({
-        start: format(startDate),
-        end: format(endDate),
-      });
-
-      startDate.setDate(startDate.getDate() + 7);
-    }
-
-    return weeks;
+  // Format ngày để hiển thị tiêu đề (Thứ X, DD/MM/YYYY)
+  const formatDateFull = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const days = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+    const dayName = days[date.getDay()];
+    const d = String(date.getDate()).padStart(2, "0");
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const y = date.getFullYear();
+    return `${dayName}, ${d}/${m}/${y}`;
   };
 
+  // Format ngày gửi lên API (YYYY-MM-DD)
+  const formatDateApi = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // Cộng/Trừ ngày
+  const addDays = (date: Date, days: number) => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  };
+
+  // --- Effects & Handlers ---
+
+  // Khởi tạo: Set ngày hiện tại về Thứ 2 đầu tuần
   useEffect(() => {
-    const currentYear = today.getFullYear();
-    const weeks = generateWeeks(currentYear);
-    setWeekOptions(weeks);
-
-    // Chọn tuần hiện tại
-    const currentWeek = weeks.find(
-      (w) => new Date(w.start) <= today && new Date(w.end) >= today
-    );
-    setSelectedWeek(currentWeek || weeks[0]);
+    const today = new Date();
+    setCurrentWeekStart(getMonday(today));
   }, []);
 
+  // Fetch Menu khi `currentWeekStart` thay đổi
   useEffect(() => {
-    if (!selectedWeek) return;
-    console.log("🚀 ~ fetchMenu ~ studentId:", studentId)
-
     const fetchMenu = async () => {
       setLoading(true);
+      setMenu(null);
       try {
-        const res = await userApis.getMenuByAgeAndDate(
-          studentId,
-          selectedWeek.start
-        );
-        if (res) setMenu(res);
-        else setMenu(null);
+        const dateString = formatDateApi(currentWeekStart);
+        const res = await userApis.getMenuByAgeAndDate(studentId, dateString);
+        if (res) {
+          setMenu(res);
+        }
       } catch (err) {
-        Alert.alert("Lỗi", "Không thể tải thực đơn");
+        // Xử lý lỗi nhẹ nhàng, không cần alert liên tục
       } finally {
         setLoading(false);
       }
     };
 
     fetchMenu();
-  }, [selectedWeek, studentId]);
+  }, [currentWeekStart, studentId]);
+
+  // Chuyển tuần
+  const handlePrevWeek = () => {
+    setCurrentWeekStart((prev) => addDays(prev, -7));
+  };
+
+  const handleNextWeek = () => {
+    setCurrentWeekStart((prev) => addDays(prev, 7));
+  };
+
+  // Tính toán ngày kết thúc tuần (Chủ Nhật) để hiển thị
+  const currentWeekEnd = addDays(currentWeekStart, 6);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        
+        {/* Header Title */}
         <View style={styles.titleContainer}>
           <MaterialCommunityIcons
-            name="silverware-variant" // Icon cho tiêu đề
+            name="silverware-variant"
             size={30}
             color={COLORS.primaryDark}
           />
           <Text style={styles.title}>Thực đơn tuần</Text>
         </View>
 
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={selectedWeek?.start}
-            onValueChange={(val) => {
-              const week = weekOptions.find((w) => w.start === val);
-              setSelectedWeek(week || null);
-            }}
-            style={styles.picker}
-          >
-            {weekOptions.map((w) => (
-              <Picker.Item
-                key={w.start}
-                label={`${formatDate(w.start)} - ${formatDate(w.end)}`}
-                value={w.start}
-              />
-            ))}
-          </Picker>
+        {/* --- BỘ ĐIỀU HƯỚNG TUẦN (MỚI) --- */}
+        <View style={styles.weekNavigator}>
+          <TouchableOpacity onPress={handlePrevWeek} style={styles.navButton}>
+            <MaterialCommunityIcons name="chevron-left" size={32} color={COLORS.primary} />
+          </TouchableOpacity>
+
+          <View style={styles.weekInfo}>
+            <Text style={styles.weekLabel}>TUẦN</Text>
+            <Text style={styles.weekDateRange}>
+              {formatDateDisplay(currentWeekStart)} - {formatDateDisplay(currentWeekEnd)}
+            </Text>
+          </View>
+
+          <TouchableOpacity onPress={handleNextWeek} style={styles.navButton}>
+            <MaterialCommunityIcons name="chevron-right" size={32} color={COLORS.primary} />
+          </TouchableOpacity>
         </View>
 
+        {/* Nội dung thực đơn */}
         {loading ? (
           <ActivityIndicator
             size="large"
@@ -207,41 +186,48 @@ const MenuScreen: React.FC<Props> = ({ route, navigation }) => {
             style={{ marginTop: 40 }}
           />
         ) : menu && menu?.days?.length > 0 ? (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            style={{ flex: 1 }}
-          >
+          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
             {menu.days.map((day) => (
               <View key={day.date} style={styles.dayContainer}>
-                <Text style={styles.dayTitle}>{formatDate(day.date)}</Text>
-                {day.meals.map((meal) => (
-                  <View key={meal.mealType} style={styles.mealContainer}>
-                    <Text style={styles.mealTitle}>{meal.mealType}</Text>
-                    {meal.foods.map(({ food }) => (
-                      <View key={food._id} style={styles.foodItemContainer}>
-                        <MaterialCommunityIcons
-                          name="food-apple-outline" // Icon món ăn
-                          size={22}
-                          color={COLORS.accent}
-                        />
-                        <Text style={styles.foodText}>
-                          {food.foodName} - {food.totalCalories} cal
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                ))}
+                {/* Tiêu đề ngày */}
+                <View style={styles.dayHeader}>
+                  <MaterialCommunityIcons name="calendar-today" size={20} color={COLORS.white} />
+                  <Text style={styles.dayTitle}>{formatDateFull(day.date)}</Text>
+                </View>
+
+                {/* Danh sách bữa ăn */}
+                <View style={styles.mealsWrapper}>
+                  {day.meals.map((meal) => (
+                    <View key={meal.mealType} style={styles.mealContainer}>
+                      <Text style={styles.mealTitle}>{meal.mealType}</Text>
+                      {meal.foods.map(({ food }) => (
+                        <View key={food._id} style={styles.foodItemContainer}>
+                          <MaterialCommunityIcons
+                            name="food-apple-outline"
+                            size={20}
+                            color={COLORS.accent}
+                          />
+                          <Text style={styles.foodText}>
+                            {food.foodName}
+                            <Text style={styles.caloriesText}> ({food.totalCalories} cal)</Text>
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  ))}
+                </View>
               </View>
             ))}
+            <View style={{ height: 20 }} />
           </ScrollView>
         ) : (
           <View style={styles.noMenuContainer}>
             <MaterialCommunityIcons
-              name="calendar-remove-outline" // Icon không có menu
+              name="calendar-remove-outline"
               size={60}
               color={COLORS.grey}
             />
-            <Text style={styles.noMenuText}>Không có thực đơn cho tuần này</Text>
+            <Text style={styles.noMenuText}>Chưa có thực đơn cho tuần này</Text>
           </View>
         )}
       </View>
@@ -249,20 +235,19 @@ const MenuScreen: React.FC<Props> = ({ route, navigation }) => {
   );
 };
 
-// Bảng màu chủ đề mầm non (xanh da trời)
+// --- Bảng màu & Styles ---
 const COLORS = {
-  background: "#f0f8ff", // AliceBlue (màu nền xanh nhạt)
+  background: "#F0F8FF", // AliceBlue
   white: "#FFFFFF",
-  primary: "#00796B", // Màu Teal đậm cho tiêu đề ngày
-  primaryDark: "#004D40", // Màu tiêu đề chính
-  lightBlue: "#81D4FA", // Màu xanh da trời sáng (viền)
-  textPrimary: "#333333", // Màu chữ chính
-  textSecondary: "#555555", // Màu chữ phụ (món ăn)
-  textLight: "#757575", // Màu chữ mờ
-  accent: "#FFA726", // Màu cam/vàng cho icon (tạo điểm nhấn)
-  borderColor: "#B2DFDB", // Màu viền nhạt
-  shadow: "rgba(0, 0, 0, 0.1)",
+  primary: "#00B4D8", // Sky Blue
+  primaryDark: "#0077B6", // Darker Blue
+  accent: "#FFA726", // Orange
+  textPrimary: "#333333",
+  textSecondary: "#555555",
+  textLight: "#888888",
   grey: "#BDBDBD",
+  borderColor: "#E0F7FA",
+  headerBg: "#00B4D8", // Màu nền cho header ngày
 };
 
 const styles = StyleSheet.create({
@@ -287,75 +272,111 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginLeft: 10,
   },
-  pickerContainer: {
+  
+  // Style cho thanh điều hướng tuần
+  weekNavigator: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: COLORS.white,
     borderRadius: 12,
-    backgroundColor: COLORS.white,
+    padding: 10,
     marginBottom: 16,
-    elevation: 3,
-    shadowColor: COLORS.shadow,
-    shadowOpacity: 1,
+    // Shadow
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
     shadowRadius: 4,
-    overflow: "hidden", // Đảm bảo bo góc hoạt động trên Android
+    elevation: 3,
   },
-  picker: {
-    // Không cần style nhiều ở đây, để mặc định
+  navButton: {
+    padding: 5,
   },
+  weekInfo: {
+    alignItems: "center",
+  },
+  weekLabel: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: COLORS.textLight,
+    marginBottom: 2,
+  },
+  weekDateRange: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.primaryDark,
+  },
+
+  // Style cho thẻ ngày
   dayContainer: {
-    marginBottom: 20,
-    padding: 16,
     backgroundColor: COLORS.white,
-    borderRadius: 15, // Tăng độ bo góc
-    shadowColor: COLORS.shadow,
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 5, // Tăng độ nổi
+    borderRadius: 16,
+    marginBottom: 16,
+    overflow: "hidden", // Để bo góc cho header con
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.headerBg,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
   dayTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    color: COLORS.primary,
-    marginBottom: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: COLORS.borderColor,
-    paddingBottom: 8,
+    color: COLORS.white,
+    marginLeft: 8,
+  },
+  mealsWrapper: {
+    padding: 16,
   },
   mealContainer: {
-    marginBottom: 10,
-    paddingLeft: 12,
-    borderLeftWidth: 4, // Tạo đường viền trang trí
-    borderLeftColor: COLORS.lightBlue,
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+    paddingBottom: 12,
   },
   mealTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-    textTransform: "capitalize",
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.primaryDark,
     marginBottom: 8,
+    textTransform: "capitalize",
   },
   foodItemContainer: {
     flexDirection: "row",
-    alignItems: "center", // Căn icon và chữ
+    alignItems: "center",
     marginBottom: 6,
   },
   foodText: {
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.textSecondary,
-    marginLeft: 10, // Khoảng cách giữa icon và chữ
-    flexShrink: 1, // Cho phép text tự xuống dòng
+    marginLeft: 8,
+    flex: 1,
   },
+  caloriesText: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    fontStyle: "italic",
+  },
+  
+  // Empty State
   noMenuContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 40,
-    opacity: 0.8,
+    opacity: 0.7,
   },
   noMenuText: {
     textAlign: "center",
     marginTop: 16,
-    fontSize: 18,
+    fontSize: 16,
     color: COLORS.textLight,
     fontStyle: "italic",
   },

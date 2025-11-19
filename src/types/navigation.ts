@@ -27,6 +27,9 @@ export type AuthStackParamList = {
   Feedback: undefined;
   Attendance: undefined;
   HealthProfile: undefined;
+  Guardian: undefined;
+  GuardianList: undefined;
+  PaymentWebView: { url: string };
 };
 
 export type RootStackParamList = {

@@ -1,5 +1,5 @@
 import { AxiosError } from "axios";
-import { AttendanceResponse, FeedbackApiResponse, LoginRequest, LoginResponse, MedicalResponse, Menu, MonthlySchedule, StuParent, StuParents, User } from "../types/auth";
+import { AttendanceResponse, ConfirmTuitionPayload, ConfirmTuitionResponse, FeedbackApiResponse, LoginRequest, LoginResponse, MedicalResponse, Menu, MonthlySchedule, StuParent, StuParents, User } from "../types/auth";
 import { apiEndPoint } from "./api";
 import axiosAuth from "./axiosAuth";
 import { messages } from "../constants/message";
@@ -63,60 +63,83 @@ export const authApis = {
 };
 
 export const userApis = {
-    getCurrentUser: async (): Promise<User> => {
-        const response = await axiosAuth.get<User>(apiEndPoint.CURRENT_USER);
-        console.log("🚀 ~ response:", response)
-        return response.data;
-    },
-    getStudentByParent: async (parentId: string): Promise<StuParents> => {
-        const response = await axiosAuth.get<StuParents>(
-            `${apiEndPoint.STUDENT_BY_PARENT}/${parentId}`
-        );
-        return response.data;
-    },
-    getScheduleByClassAndMonth: async (classId: string, month: number): Promise<MonthlySchedule[]> => {
-        const response = await axiosAuth.get<MonthlySchedule[]>(apiEndPoint.SC_BY_CLASS_MONTH, {
-            params: { classId, month },
-        });
-        return response.data;
-    },
-    getAttByStuDate: async (studentId: string, date: string): Promise<AttendanceResponse> => {
-        const response = await axiosAuth.get<AttendanceResponse>(apiEndPoint.ATT_BY_STU_DATE, {
-            params: { studentId, date },
-        });
-        return response.data;
-    },
-    getClassByStuAndSY: async (studentId: string, schoolYearId: string): Promise<User[]> => {
-        const response = await axiosAuth.get<User[]>(apiEndPoint.CLASS_BY_STU_SY, {
-            params: { studentId, schoolYearId },
-        });
-        return response.data;
-    },
-    getFbByStuAndDate: async (studentId: string, date: string): Promise<FeedbackApiResponse> => {
-        const response = await axiosAuth.get<FeedbackApiResponse>(apiEndPoint.FB_BY_STU_DATE, {
-            params: { studentId, date },
-        });
-        return response.data;
-    },
-    getMedByStu: async (studentId: string): Promise<MedicalResponse> => {
-        console.log("🚀 ~ studentI222d:", studentId)
-        const response = await axiosAuth.get<MedicalResponse>(
-            `${apiEndPoint.MED_BY_STUDENT}/${studentId}`
-        );
-        return response.data;
-    },
-    getMenuByAgeAndDate: async (studentId: string, date: string): Promise<Menu> => {
-        const response = await axiosAuth.get<Menu>(apiEndPoint.MENU_BY_AGE_DATE, {
-            params: { studentId, date },
-        });
-        return response.data; // res.data là Menu object
-    },
-    getListSY: async (): Promise<User[]> => {
-        const response = await axiosAuth.get<User[]>(
-            `${apiEndPoint.SY_LIST}`
-        );
-        return response.data;
-    },
+  getCurrentUser: async (): Promise<User> => {
+    const response = await axiosAuth.get<User>(apiEndPoint.CURRENT_USER);
+    return response.data;
+  },
+  getStudentByParent: async (parentId: string): Promise<StuParents> => {
+    const response = await axiosAuth.get<StuParents>(
+      `${apiEndPoint.STUDENT_BY_PARENT}/${parentId}`
+    );
+    return response.data;
+  },
+  getScheduleByClassAndMonth: async (classId: string, month: number): Promise<MonthlySchedule[]> => {
+    const response = await axiosAuth.get<MonthlySchedule[]>(apiEndPoint.SC_BY_CLASS_MONTH, {
+      params: { classId, month },
+    });
+    return response.data;
+  },
+  getAttByStuDate: async (studentId: string, date: string): Promise<AttendanceResponse> => {
+    const response = await axiosAuth.get<AttendanceResponse>(apiEndPoint.ATT_BY_STU_DATE, {
+      params: { studentId, date },
+    });
+    return response.data;
+  },
+  getClassByStuAndSY: async (studentId: string, schoolYearId: string): Promise<User[]> => {
+    const response = await axiosAuth.get<User[]>(apiEndPoint.CLASS_BY_STU_SY, {
+      params: { studentId, schoolYearId },
+    });
+    return response.data;
+  },
+  getFbByStuAndDate: async (studentId: string, date: string): Promise<FeedbackApiResponse> => {
+    const response = await axiosAuth.get<FeedbackApiResponse>(apiEndPoint.FB_BY_STU_DATE, {
+      params: { studentId, date },
+    });
+    return response.data;
+  },
+  getMedByStu: async (studentId: string): Promise<MedicalResponse> => {
+    console.log("🚀 ~ studentI222d:", studentId)
+    const response = await axiosAuth.get<MedicalResponse>(
+      `${apiEndPoint.MED_BY_STUDENT}/${studentId}`
+    );
+    return response.data;
+  },
+  getMenuByAgeAndDate: async (studentId: string, date: string): Promise<Menu> => {
+    const response = await axiosAuth.get<Menu>(apiEndPoint.MENU_BY_AGE_DATE, {
+      params: { studentId, date },
+    });
+    return response.data; // res.data là Menu object
+  },
+  getListSY: async (): Promise<User[]> => {
+    const response = await axiosAuth.get<User[]>(
+      `${apiEndPoint.CREATE_GUARDIAN}`
+    );
+    return response.data;
+  },
+  createGuardian: async (data: any): Promise<any> => {
+    const url = apiEndPoint.CREATE_GUARDIAN;
+    const response = await axiosAuth.post(url, data);
+    return response.data;
+  },
+  getGuardiansByStudent: async (studentId: any): Promise<any> => {
+    const url = apiEndPoint.GET_LIST_GUARDIAN_BY_STUDENT(studentId);
+    const response = await axiosAuth.get(url);
+    return response.data;
+  },
+  getTuitionByParent: async (parentId: any): Promise<any> => {
+    const url = apiEndPoint.GET_TUITION_BY_PARENT(parentId);
+    const response = await axiosAuth.get(url);
+    return response.data;
+  },
+  confirmTuition: async (
+    payload: ConfirmTuitionPayload
+  ): Promise<ConfirmTuitionResponse> => {
+    const response = await axiosAuth.post<ConfirmTuitionResponse>(
+      apiEndPoint.CONFIRM_TUITION,
+      payload
+    );
+    return response.data;
+  }
 };
 
 export const postApis = {

@@ -351,6 +351,22 @@ export type FeedbackApiResponse = {
   data: FeedbackRecord; 
 };
 
+export interface ConfirmTuitionPayload {
+    enrollementId: any;
+    parentId: any;
+    totalAmount: number;
+}
+
+export interface ConfirmTuitionResponse {
+    success: boolean;
+    message: string;
+    data: {
+        paymentUrl: string;
+        transactionCode: number;
+        qrCode: string;
+    };
+}
+
 export interface ActionPermission {
   name: string;
   allowed: boolean;
