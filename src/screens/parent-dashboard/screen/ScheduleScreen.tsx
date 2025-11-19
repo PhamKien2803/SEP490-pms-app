@@ -6,119 +6,101 @@ import {
   ScrollView,
   ActivityIndicator,
   SafeAreaView,
+  TouchableOpacity,
+  FlatList,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { userApis } from "../../../services/apiServices";
 import { AuthStackParamList } from "../../../routes/AuthStack";
-// --- Sửa lỗi Type: Import trực tiếp từ file types của bạn ---
 import {
   MonthlySchedule,
-  Activity, // Import Activity chính xác
-  ScheduleDay, // Import ScheduleDay chính xác
+  Activity,
+  ScheduleDay,
 } from "../../../types/auth";
 
-// --- Định nghĩa Typescript ---
-
-// Kiểu dữ liệu mới để nhóm các tuần lại
+// --- Helper Types ---
 type WeekGroup = {
-  id: string; // Dùng _id của ngày đầu tiên làm ID
-  label: string; // Ví dụ: "Tuần 1 (01/11 - 07/11)"
+  id: string;
+  label: string;
   days: ScheduleDay[];
 };
 
-// Kiểu dữ liệu cho API response (là một mảng)
 type ApiResponse = MonthlySchedule[];
 
-// --- Định nghĩa Props ---
 type Props = NativeStackScreenProps<AuthStackParamList, "Schedule">;
 
-// --- Màn hình chính ---
 const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
   const { student } = route.params;
-  // Giả sử student object có class
-  const classId = "691757179b7ad0c9496f4372"; // Lấy classId từ student
-// student.class?._id || 
-  const [loading, setLoading] = useState(false);
-  const [scheduleData, setScheduleData] = useState<MonthlySchedule | null>(null);
-  const [monthOptions, setMonthOptions] = useState<{ label: string; value: number }[]>(
-    []
-  );
-  const [selectedMonth, setSelectedMonth] = useState<number>(
-    new Date().getMonth() + 1
-  );
+  const classId = "691757179b7ad0c9496f4372"; // Thay bằng student.class?._id nếu có
 
-  // --- State mới cho việc chọn tuần ---
+  const [loading, setLoading] = useState(false);
+  const [monthOptions, setMonthOptions] = useState<{ label: string; value: number }[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+
+  // Data States
   const [weekGroups, setWeekGroups] = useState<WeekGroup[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<WeekGroup | null>(null);
+  const [selectedDay, setSelectedDay] = useState<ScheduleDay | null>(null);
 
-  // --- Helper Functions ---
-
-  // Chuyển đổi số phút (ví dụ: 435) sang "HH:mm" (ví dụ: "07:15")
-  const formatTime = (minutes: number) => {
-    if (minutes === null || minutes === undefined) return "N/A";
+  // --- Helpers ---
+  const formatTime = (minutes: number | undefined) => {
+    if (minutes === undefined || minutes === null) return "--:--";
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
   };
 
-  // Format ngày "YYYY-MM-DDTHH..." -> "DD/MM"
-  const formatDate = (dateStr: string) => {
+  const formatDateShort = (dateStr: string) => {
     const date = new Date(dateStr);
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     return `${day}/${month}`;
   };
 
-  // --- Helper mới: Chia các ngày thành các tuần ---
   const groupDaysIntoWeeks = (days: ScheduleDay[]): WeekGroup[] => {
     const weeks: WeekGroup[] = [];
     let currentWeek: ScheduleDay[] = [];
 
     days.forEach((day, index) => {
       currentWeek.push(day);
-
-      // Nếu là "Chủ nhật" hoặc là ngày cuối cùng của mảng, đóng tuần lại
+      // Ngắt tuần vào Chủ Nhật hoặc ngày cuối cùng
       if (day.dayName === "Chủ nhật" || index === days.length - 1) {
         if (currentWeek.length > 0) {
           const weekNumber = weeks.length + 1;
-          const startDate = formatDate(currentWeek[0].date);
-          const endDate = formatDate(currentWeek[currentWeek.length - 1].date);
-
+          const start = formatDateShort(currentWeek[0].date);
+          const end = formatDateShort(currentWeek[currentWeek.length - 1].date);
           weeks.push({
             id: currentWeek[0]._id,
-            label: `Tuần ${weekNumber} (${startDate} - ${endDate})`,
+            label: `Tuần ${weekNumber} (${start} - ${end})`,
             days: currentWeek,
           });
-          currentWeek = []; // Bắt đầu tuần mới
+          currentWeek = [];
         }
       }
     });
     return weeks;
   };
 
-  // --- UseEffect ---
-
-  // 1. Tạo danh sách 12 tháng cho Picker
+  // --- Effects ---
   useEffect(() => {
     const months = Array.from({ length: 12 }, (v, k) => ({
       label: `Tháng ${k + 1}`,
       value: k + 1,
     }));
     setMonthOptions(months);
-    setSelectedMonth(new Date().getMonth() + 1);
   }, []);
 
-  // 2. Fetch dữ liệu khi `selectedMonth` hoặc `classId` thay đổi
   useEffect(() => {
     if (!classId || !selectedMonth) return;
 
     const fetchSchedule = async () => {
       setLoading(true);
-      setScheduleData(null);
-      setWeekGroups([]); // Xóa các tuần cũ
-      setSelectedWeek(null); // Xóa tuần đã chọn
+      setWeekGroups([]);
+      setSelectedWeek(null);
+      setSelectedDay(null);
+
       try {
         const res: ApiResponse = await userApis.getScheduleByClassAndMonth(
           classId,
@@ -127,21 +109,19 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
 
         if (res && res.length > 0) {
           const monthData = res[0];
-          setScheduleData(monthData);
-
-          // Nhóm các ngày thành tuần
           const weeks = groupDaysIntoWeeks(monthData.scheduleDays);
           setWeekGroups(weeks);
 
-          // Tự động chọn tuần đầu tiên
+          // Mặc định chọn tuần đầu tiên & ngày đầu tiên của tuần đó
           if (weeks.length > 0) {
             setSelectedWeek(weeks[0]);
+            if (weeks[0].days.length > 0) {
+              setSelectedDay(weeks[0].days[0]);
+            }
           }
-        } else {
-          setScheduleData(null);
         }
       } catch (err) {
-        setScheduleData(null);
+        // Xử lý lỗi im lặng hoặc show toast
       } finally {
         setLoading(false);
       }
@@ -150,125 +130,159 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
     fetchSchedule();
   }, [selectedMonth, classId]);
 
-  // --- Render Functions ---
+  // Khi chọn tuần mới, tự động chọn ngày đầu tiên của tuần đó
+  const handleSelectWeek = (weekId: string) => {
+    const newWeek = weekGroups.find((w) => w.id === weekId);
+    if (newWeek) {
+      setSelectedWeek(newWeek);
+      if (newWeek.days.length > 0) {
+        setSelectedDay(newWeek.days[0]);
+      }
+    }
+  };
 
-  // Sử dụng 'Activity' đã được import
+  // --- Render Item ---
   const renderActivity = (activity: Activity) => (
-    <View key={activity._id} style={styles.activityRow}>
-      {/* Cột thời gian */}
-      <View style={styles.timeColumn}>
+    <View key={activity._id} style={styles.activityCard}>
+      {/* Cột trái: Thời gian */}
+      <View style={styles.timeContainer}>
         <Text style={styles.timeText}>{formatTime(activity.startTime)}</Text>
-        <Text style={styles.timeText}>-</Text>
+        <View style={styles.verticalLine} />
         <Text style={styles.timeText}>{formatTime(activity.endTime)}</Text>
       </View>
-      {/* Đường kẻ phân cách */}
-      <View style={styles.separator} />
-      {/* Cột thông tin hoạt động */}
-      <View style={styles.infoColumn}>
-        <Text style={styles.activityNameText}>
+
+      {/* Cột phải: Nội dung */}
+      <View style={styles.contentContainer}>
+        <Text style={styles.activityName}>
           {activity.activityName || "Hoạt động"}
         </Text>
-        {activity.tittle && (
-          <Text style={styles.activityTittleText}>({activity.tittle})</Text>
-        )}
+        {activity.tittle ? (
+          <Text style={styles.activityTitle}>Topic: {activity.tittle}</Text>
+        ) : null}
+        {/* Nếu muốn hiển thị thêm category hoặc age, thêm tại đây */}
       </View>
     </View>
   );
 
+  const renderDaySelector = () => {
+    if (!selectedWeek) return null;
+    return (
+      <View style={styles.daySelectorWrapper}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.daySelectorContent}
+        >
+          {selectedWeek.days.map((day) => {
+            const isSelected = selectedDay?._id === day._id;
+            return (
+              <TouchableOpacity
+                key={day._id}
+                style={[
+                  styles.dayButton,
+                  isSelected && styles.dayButtonActive,
+                ]}
+                onPress={() => setSelectedDay(day)}
+              >
+                <Text style={[styles.dayNameBtn, isSelected && styles.textWhite]}>
+                  {day.dayName}
+                </Text>
+                <Text style={[styles.dateBtn, isSelected && styles.textWhite]}>
+                  {formatDateShort(day.date)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.titleContainer}>
-          <MaterialCommunityIcons
-            name="calendar-month-outline"
-            size={30}
-            color={COLORS.primaryDark}
-          />
-          <Text style={styles.title}>Lịch học</Text>
+        
+        {/* Header Tiêu đề */}
+        <View style={styles.header}>
+          <MaterialCommunityIcons name="calendar-month" size={28} color={COLORS.primaryDark} />
+          <Text style={styles.headerTitle}>Lịch học</Text>
         </View>
 
-        {/* Picker chọn tháng */}
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={selectedMonth}
-            onValueChange={(val) => setSelectedMonth(val)}
-          >
-            {monthOptions.map((m) => (
-              <Picker.Item key={m.value} label={m.label} value={m.value} />
-            ))}
-          </Picker>
+        {/* Bộ chọn Tháng & Tuần */}
+        <View style={styles.filterContainer}>
+          {/* Picker Tháng */}
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={selectedMonth}
+              onValueChange={(val) => setSelectedMonth(val)}
+              style={styles.picker}
+            >
+              {monthOptions.map((m) => (
+                <Picker.Item key={m.value} label={m.label} value={m.value} style={{fontSize: 14}} />
+              ))}
+            </Picker>
+          </View>
+
+          {/* Picker Tuần */}
+          <View style={[styles.pickerWrapper, { marginLeft: 10 }]}>
+            <Picker
+              selectedValue={selectedWeek?.id}
+              onValueChange={(val) => handleSelectWeek(val)}
+              enabled={weekGroups.length > 0}
+              style={styles.picker}
+            >
+              {weekGroups.length > 0 ? (
+                weekGroups.map((w) => (
+                  <Picker.Item key={w.id} label={w.label} value={w.id} style={{fontSize: 14}} />
+                ))
+              ) : (
+                <Picker.Item label="Chưa có lịch" value={null} />
+              )}
+            </Picker>
+          </View>
         </View>
 
         {loading ? (
-          <ActivityIndicator
-            size="large"
-            color={COLORS.primary}
-            style={{ marginTop: 40 }}
-          />
-        ) : !scheduleData || weekGroups.length === 0 ? (
-          // Hiển thị nếu không có lịch của tháng
-          <View style={styles.noDataContainer}>
-            <MaterialCommunityIcons
-              name="calendar-remove-outline"
-              size={60}
-              color={COLORS.grey}
-            />
-            <Text style={styles.noDataText}>
-              Không có lịch học cho tháng này
-            </Text>
-          </View>
+          <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
+        ) : !selectedDay ? (
+           <View style={styles.centerMessage}>
+             <Text style={styles.textSecondary}>Không có dữ liệu hiển thị</Text>
+           </View>
         ) : (
-          // Nếu có dữ liệu, hiển thị Picker Tuần và Lịch học
           <>
-            {/* Picker chọn tuần (MỚI) */}
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={selectedWeek?.id}
-                onValueChange={(val) => {
-                  const week = weekGroups.find((w) => w.id === val);
-                  setSelectedWeek(week || null);
-                }}
-              >
-                {weekGroups.map((w) => (
-                  <Picker.Item key={w.id} label={w.label} value={w.id} />
-                ))}
-              </Picker>
-            </View>
+            {/* Thanh chọn ngày ngang */}
+            {renderDaySelector()}
 
-            {/* ScrollView chỉ hiển thị các ngày trong `selectedWeek` */}
-            <ScrollView
+            {/* Nội dung chi tiết của ngày đã chọn */}
+            <ScrollView 
+              style={styles.scheduleContent} 
               showsVerticalScrollIndicator={false}
-              style={{ flex: 1 }}
             >
-              {selectedWeek?.days.map((day) => (
-                <View key={day._id} style={styles.dayContainer}>
-                  {/* Tiêu đề của ngày */}
-                  <View style={styles.dayHeader}>
-                    <Text style={styles.dayNameText}>{day.dayName}</Text>
-                    <Text style={styles.dateText}>{formatDate(day.date)}</Text>
-                  </View>
+              {/* Tiêu đề ngày */}
+              <View style={styles.dayTitleContainer}>
+                <MaterialCommunityIcons name="calendar-check" size={20} color={COLORS.primary} />
+                <Text style={styles.currentDayTitle}>
+                  {selectedDay.dayName}, ngày {formatDateShort(selectedDay.date)}
+                </Text>
+              </View>
 
-                  {/* Nội dung của ngày */}
-                  {day.isHoliday ? (
-                    <View style={styles.holidayContainer}>
-                      <MaterialCommunityIcons
-                        name="party-popper"
-                        size={24}
-                        color={COLORS.accent}
-                      />
-                      <Text style={styles.holidayText}>Ngày nghỉ</Text>
-                    </View>
-                  ) : day.activities.length === 0 ? (
-                    <View style={styles.holidayContainer}>
-                      <Text style={styles.noActivityText}>
-                        Không có hoạt động
-                      </Text>
-                    </View>
-                  ) : (
-                    day.activities.map(renderActivity)
-                  )}
+              {selectedDay.isHoliday ? (
+                <View style={styles.holidayBox}>
+                   <MaterialCommunityIcons name="balloon" size={40} color={COLORS.accent} />
+                   <Text style={styles.holidayText}>Hôm nay là ngày nghỉ!</Text>
                 </View>
-              ))}
+              ) : selectedDay.activities.length === 0 ? (
+                <View style={styles.holidayBox}>
+                   <Text style={styles.textSecondary}>Không có hoạt động nào được ghi nhận.</Text>
+                </View>
+              ) : (
+                <View style={styles.timelineList}>
+                  {selectedDay.activities.map(renderActivity)}
+                </View>
+              )}
+              
+              {/* Khoảng trống dưới cùng để không bị che bởi tabbar nếu có */}
+              <View style={{height: 20}} />
             </ScrollView>
           </>
         )}
@@ -277,160 +291,190 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
   );
 };
 
-// Bảng màu (Chủ đề mầm non - xanh)
+// --- Colors & Styles ---
 const COLORS = {
-  background: "#f0f8ff", // AliceBlue
+  background: "#F0F8FF", // AliceBlue
   white: "#FFFFFF",
-  primary: "#00b4d8", // Màu xanh da trời chính
-  primaryDark: "#0077b6", // Xanh đậm cho tiêu đề
-  accent: "#FFA726", // Cam (điểm nhấn)
+  primary: "#00B4D8", // Sky Blue
+  primaryDark: "#0077B6", // Darker Blue
+  accent: "#FFA726", // Orange
   textPrimary: "#333333",
-  textSecondary: "#555555",
-  textLight: "#757575",
-  borderColor: "#e0f7fa", // Xanh rất nhạt
-  shadow: "rgba(0, 0, 0, 0.1)",
-  grey: "#BDBDBD",
-  holiday: "#f8bbd0", // Hồng nhạt cho ngày nghỉ
+  textSecondary: "#666666",
+  border: "#E0E0E0",
+  successLight: "#E8F5E9",
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  titleContainer: {
+  safeArea: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, padding: 16 },
+
+  // Header
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
   },
-  title: {
-    fontSize: 26,
+  headerTitle: {
+    fontSize: 24,
     fontWeight: "700",
     color: COLORS.primaryDark,
-    textAlign: "center",
-    marginLeft: 10,
+    marginLeft: 8,
   },
-  pickerContainer: {
-    borderRadius: 12,
-    backgroundColor: COLORS.white,
-    marginBottom: 16,
-    elevation: 3,
-    shadowColor: COLORS.shadow,
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    overflow: "hidden",
-  },
-  dayContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 15,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: COLORS.shadow,
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  dayHeader: {
+
+  // Filter Area
+  filterContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  pickerWrapper: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    overflow: "hidden",
+    height: 50,
+    justifyContent: 'center'
+  },
+  picker: {
+    // Style cho Android/iOS picker
+    width: '100%',
+  },
+
+  // Day Selector (Horizontal)
+  daySelectorWrapper: {
+    marginBottom: 16,
+  },
+  daySelectorContent: {
+    paddingVertical: 4,
+  },
+  dayButton: {
+    backgroundColor: COLORS.white,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginRight: 10,
     alignItems: "center",
-    borderBottomWidth: 2,
-    borderBottomColor: COLORS.borderColor,
-    paddingBottom: 10,
-    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    minWidth: 70,
   },
-  dayNameText: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: COLORS.primaryDark,
+  dayButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+    elevation: 4,
+    shadowColor: COLORS.primary,
+    shadowOpacity: 0.3,
+    shadowOffset: {width: 0, height: 2},
   },
-  dateText: {
-    fontSize: 18,
-    color: COLORS.textLight,
+  dayNameBtn: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+    marginBottom: 2,
   },
-  activityRow: {
+  dateBtn: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  textWhite: {
+    color: COLORS.white,
+  },
+
+  // Schedule Detail
+  scheduleContent: {
+    flex: 1,
+  },
+  dayTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12, // Tăng khoảng cách
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
+    marginBottom: 12,
+    backgroundColor: "#E1F5FE",
+    padding: 8,
+    borderRadius: 8,
   },
-  // Cột thời gian
-  timeColumn: {
-    width: 80, // Cố định chiều rộng
+  currentDayTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.primaryDark,
+    marginLeft: 8,
+  },
+  
+  // Timeline / Activity Card
+  timelineList: {
+    paddingHorizontal: 2,
+  },
+  activityCard: {
+    flexDirection: "row",
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    // Shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  timeContainer: {
     alignItems: "center",
-    justifyContent: "center",
+    width: 60,
+    marginRight: 12,
   },
   timeText: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "600",
-    color: COLORS.accent, // Dùng màu nhấn
+    color: COLORS.primaryDark,
   },
-  // Dấu gạch dọc
-  separator: {
+  verticalLine: {
     width: 2,
-    height: "100%",
-    backgroundColor: COLORS.primary,
-    opacity: 0.5,
+    flex: 1,
+    backgroundColor: "#B3E5FC",
+    marginVertical: 4,
     borderRadius: 1,
   },
-  // Cột thông tin
-  infoColumn: {
-    flex: 1, // Tự động chiếm không gian còn lại
-    paddingLeft: 16,
+  contentContainer: {
+    flex: 1,
+    justifyContent: "center",
   },
-  activityNameText: {
+  activityName: {
     fontSize: 16,
     fontWeight: "600",
     color: COLORS.textPrimary,
-    marginBottom: 4, // Khoảng cách nếu có tittle
+    marginBottom: 4,
   },
-  activityTittleText: {
+  activityTitle: {
     fontSize: 14,
-    fontStyle: "italic",
     color: COLORS.textSecondary,
+    fontStyle: "italic",
   },
-  // Thông báo ngày nghỉ
-  holidayContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-    backgroundColor: "#fff9c4", // Màu vàng nhạt
-    borderRadius: 10,
+
+  // Empty States
+  centerMessage: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  holidayBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 30,
+    backgroundColor: '#FFF3E0',
+    borderRadius: 12,
+    marginTop: 10,
   },
   holidayText: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: 'bold',
     color: COLORS.accent,
-    marginLeft: 10,
+    marginTop: 8,
   },
-  noActivityText: {
+  textSecondary: {
+    color: COLORS.textSecondary,
     fontSize: 16,
-    fontStyle: "italic",
-    color: COLORS.textLight,
-  },
-  // Thông báo không có dữ liệu
-  noDataContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 40,
-    opacity: 0.8,
-  },
-  noDataText: {
-    textAlign: "center",
-    marginTop: 16,
-    fontSize: 18,
-    color: COLORS.textLight,
-    fontStyle: "italic",
   },
 });
 

@@ -17,7 +17,7 @@ import DateTimePicker, {
 import { userApis } from "../../../services/apiServices";
 import { AuthStackParamList } from "../../../routes/AuthStack";
 
-// --- Định nghĩa Typescript (ĐÃ CẬP NHẬT) ---
+// --- Định nghĩa Typescript ---
 
 type ClassInfo = {
   _id: string;
@@ -37,24 +37,22 @@ type StudentInfo = {
   gender: string;
 };
 
-// Cập nhật theo log mới: Không có _doc
 type StudentAttendanceRecord = {
   status: string;
   note?: string;
   student: StudentInfo;
-  timeCheckIn: string | null; // Thêm trường này
-  timeCheckOut: string | null; // Thêm trường này
+  timeCheckIn: string | null;
+  timeCheckOut: string | null;
   guardian: string | null;
 };
 
-// Cập nhật theo log mới
 type AttendanceResponse = {
   success: boolean;
   class: ClassInfo;
   teacher: TeacherInfo;
   date: string;
   generalNote: string;
-  student: StudentAttendanceRecord; // Cập nhật type ở đây
+  student: StudentAttendanceRecord;
 };
 
 // --- Định nghĩa Props ---
@@ -80,7 +78,6 @@ const SectionCard: React.FC<{
 );
 
 // --- Component Row tái sử dụng ---
-// Cập nhật để có thể tùy chỉnh màu giá trị (value)
 const InfoRow: React.FC<{
   icon: string;
   label: string;
@@ -100,7 +97,6 @@ const InfoRow: React.FC<{
 const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
   const { student } = route.params;
   const studentId = student._id;
-  console.log("🚀 ~ AttendanceScreen ~ studentId111111:", studentId)
 
   const [loading, setLoading] = useState(false);
   const [attendanceData, setAttendanceData] = useState<AttendanceResponse | null>(
@@ -135,7 +131,6 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
     return `${dayName}, ${d}/${m}/${y}`;
   };
 
-  // --- Helper MỚI: Format thời gian ---
   const formatTimeDisplay = (isoString: string | null) => {
     if (!isoString) {
       return "Chưa có";
@@ -160,7 +155,7 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
-  // --- UseEffect (Sửa logic kiểm tra res) ---
+  // --- UseEffect ---
   useEffect(() => {
     const fetchAttendance = async () => {
       setLoading(true);
@@ -173,7 +168,6 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
           dateString
         );
 
-        // Kiểm tra 'success' để đảm bảo có dữ liệu
         if (res && res.success) {
           setAttendanceData(res);
         } else {
@@ -189,11 +183,10 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
     fetchAttendance();
   }, [selectedDate, studentId]);
 
-  // --- Render Functions (Cập nhật logic) ---
+  // --- Render Functions ---
   const renderStatusCard = () => {
     if (!attendanceData) return null;
 
-    // Truy cập trực tiếp (không cần _doc)
     const { status, note, student, timeCheckIn, timeCheckOut } =
       attendanceData.student;
     const studentName = student.fullName;
@@ -210,7 +203,7 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
         statusColor = COLORS.success;
         break;
       case "Vắng mặt có phép":
-      case "Vắng mặt": // Bắt cả trường hợp "Vắng mặt"
+      case "Vắng mặt":
         iconName = "close-circle-outline";
         iconColor = COLORS.warning;
         statusColor = COLORS.warning;
@@ -236,8 +229,6 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
             {status}
           </Text>
 
-          {/* --- MỚI: Hiển thị thời gian --- */}
-          {/* Chỉ hiển thị khi bé không vắng mặt */}
           {!isAbsent && (
             <View style={styles.timeContainer}>
               <InfoRow
@@ -254,9 +245,7 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
               />
             </View>
           )}
-          {/* ---------------------------- */}
 
-          {/* Hiển thị ghi chú của bé */}
           {note ? (
             <Text style={styles.statusNote}>Ghi chú: {note}</Text>
           ) : (
@@ -271,16 +260,16 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.titleContainer}>
-          <MaterialCommunityIcons
-            name="check-all"
-            size={30}
-            color={COLORS.primaryDark}
-          />
-          <Text style={styles.title}>Điểm danh</Text>
-        </View>
+      {/* Header với nút Back */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={COLORS.primaryDark} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Điểm danh</Text>
+        <View style={{width: 24}} />
+      </View>
 
+      <View style={styles.container}>
         {/* Nút chọn ngày */}
         <TouchableOpacity
           style={styles.datePickerButton}
@@ -382,22 +371,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  // Header Styles
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderColor,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.primaryDark,
+  },
+  // Container
   container: {
     flex: 1,
     padding: 16,
-  },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: COLORS.primaryDark,
-    textAlign: "center",
-    marginLeft: 10,
   },
   datePickerButton: {
     flexDirection: "row",
@@ -452,9 +447,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.textSecondary,
     fontStyle: "italic",
-    marginTop: 8, // Thêm khoảng cách
+    marginTop: 8,
   },
-  // Style mới cho khung thời gian
   timeContainer: {
     marginTop: 12,
     paddingTop: 12,
@@ -488,8 +482,8 @@ const styles = StyleSheet.create({
   },
   infoRow: {
     flexDirection: "row",
-    alignItems: "center", // Đổi thành center
-    marginBottom: 8, // Giảm margin
+    alignItems: "center",
+    marginBottom: 8,
   },
   labelText: {
     fontSize: 16,

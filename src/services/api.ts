@@ -187,4 +187,6 @@ export const apiEndPoint = {
     `/guardians/listByStudent/${studentId}`,
   GET_LIST_GUARDIAN_BY_PARENT: (parentId: string) =>
     `/guardians/listByParent/${parentId}`,
+  GET_TUITION_BY_PARENT: (parentId: string) =>
+    `/tuitions/detail/${parentId}`,
 };

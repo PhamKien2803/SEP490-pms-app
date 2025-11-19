@@ -14,8 +14,8 @@ import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityI
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { userApis } from "../../../services/apiServices"; // Đảm bảo đã thêm getFeedbackByStudentAndDate
-import { AuthStackParamList } from "../../../routes/AuthStack"; // Đảm bảo đã thêm 'Feedback'
+import { userApis } from "../../../services/apiServices";
+import { AuthStackParamList } from "../../../routes/AuthStack";
 
 // --- Định nghĩa Typescript ---
 
@@ -88,7 +88,6 @@ type FeedbackRecord = {
   reminders: string[];
   createdAt: string;
 };
-
 
 // --- Định nghĩa Props ---
 type Props = NativeStackScreenProps<AuthStackParamList, "Feedback">;
@@ -224,16 +223,27 @@ const FeedbackScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.titleContainer}>
+      {/* HEADER RIÊNG BIỆT */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={COLORS.primaryDark} />
+        </TouchableOpacity>
+        
+        <View style={styles.headerTitleContainer}>
           <MaterialCommunityIcons
             name="file-star-outline"
-            size={30}
+            size={24}
             color={COLORS.primaryDark}
+            style={{ marginRight: 8 }}
           />
-          <Text style={styles.title}>Nhận xét ngày</Text>
+          <Text style={styles.headerTitle}>Nhận xét ngày</Text>
         </View>
 
+        {/* View rỗng để cân bằng layout */}
+        <View style={{ width: 32 }} />
+      </View>
+
+      <View style={styles.container}>
         {/* Nút chọn ngày */}
         <TouchableOpacity
           style={styles.datePickerButton}
@@ -464,22 +474,32 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  // Styles Header Mới
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderColor,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.primaryDark,
+  },
+  // Container chính
   container: {
     flex: 1,
     padding: 16,
-  },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: COLORS.primaryDark,
-    textAlign: "center",
-    marginLeft: 10,
   },
   datePickerButton: {
     flexDirection: "row",

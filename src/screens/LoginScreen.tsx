@@ -79,7 +79,7 @@ const LoginScreen: React.FC = () => {
                 size={80}
                 color={COLORS.primaryDark}
               />
-              <Text style={styles.title}>Bé Yêu</Text>
+              <Text style={styles.title}>Cá Heo Xanh</Text>
               <Text style={styles.subtitle}>Đăng nhập</Text>
             </View>
 
