@@ -111,6 +111,7 @@ const TimeTable = () => {
     const [timetableData, setTimetableData] = useState<IGetTimetableTeacherResponse | null>(null);
     const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
 
+<<<<<<< Updated upstream
     useEffect(() => {
         // Mock data fetching or actual API call for school years
         teacherApis.getSchoolYearList({ page: 0, limit: 10 }).then((res) => {
@@ -119,10 +120,27 @@ const TimeTable = () => {
             if (sorted.length > 0) setSelectedYear(sorted[0].schoolYear);
         }).catch(err => console.error("Error fetching school years:", err));
     }, []);
+=======
+  useEffect(() => {
+    teacherApis
+      .getSchoolYearList({ page: 0, limit: 10 })
+      .then((res) => {
+        const sorted = res.data.sort(
+          (a, b) => dayjs(b.startDate).unix() - dayjs(a.startDate).unix()
+        );
+        setSchoolYears(sorted);
+        if (sorted?.length > 0) {
+          setSelectedYear(sorted[0].schoolYear);
+        }
+      })
+      .catch((err) => console.error("Error fetching school years:", err));
+  }, []);
+>>>>>>> Stashed changes
 
     const totalWeeksInMonth = useMemo(() => {
         if (!selectedYear || !schoolYears.length || !currentMonth) return [];
 
+<<<<<<< Updated upstream
         const selectedSchoolYearData = schoolYears.find(y => y.schoolYear === selectedYear);
         if (!selectedSchoolYearData) return [];
 
@@ -152,6 +170,275 @@ const TimeTable = () => {
             const weekEnd = cursor.add(6, 'day').endOf('day');
             if (weekStart.isSameOrBefore(lastDayOfMonth, 'day')) {
                  weeks.push({ start: weekStart, end: weekEnd });
+=======
+    const selectedSchoolYearData = schoolYears.find(
+      (y) => y.schoolYear === selectedYear
+    );
+    if (!selectedSchoolYearData || !selectedSchoolYearData.startDate) return [];
+
+    const schoolStartDate = dayjs(selectedSchoolYearData.startDate);
+    const schoolStartMonth = schoolStartDate.month() + 1;
+    const schoolStartYear = schoolStartDate.year();
+
+    const year =
+      currentMonth >= schoolStartMonth ? schoolStartYear : schoolStartYear + 1;
+
+    const firstDayOfMonth = dayjs(`${year}-${currentMonth}-01`);
+    const lastDayOfMonth = firstDayOfMonth.endOf("month");
+
+    let cursor;
+    const dayOfWeek = firstDayOfMonth.day();
+    // Monday is 1, Sunday is 0. If Sunday, go back 6 days to Monday
+    if (dayOfWeek === 0) {
+      cursor = firstDayOfMonth.subtract(6, "day");
+    } else {
+      // Go back dayOfWeek - 1 days to Monday
+      cursor = firstDayOfMonth.subtract(dayOfWeek - 1, "day");
+    }
+
+    const weeks: { start: dayjs.Dayjs; end: dayjs.Dayjs }[] = [];
+
+    // Lặp qua các tuần, bắt đầu từ tuần chứa ngày đầu tháng
+    while (cursor.isSameOrBefore(lastDayOfMonth.endOf("week"), "day")) {
+      const weekStart = cursor.startOf("day");
+      const weekEnd = cursor.add(6, "day").endOf("day");
+      // Chỉ thêm tuần nếu nó có chứa ít nhất một ngày của tháng
+      if (weekStart.isSameOrBefore(lastDayOfMonth, "day")) {
+        weeks.push({ start: weekStart, end: weekEnd });
+      }
+      cursor = cursor.add(7, "day");
+    }
+
+    return weeks;
+  }, [currentMonth, selectedYear, schoolYears]);
+
+  useEffect(() => {
+    if (!teacherId || !selectedYear) {
+      // Nếu chưa có teacherId hoặc selectedYear, không fetch
+      setTimetableData(null);
+      setLoading(false);
+      return;
+    }
+
+    const fetch = async () => {
+      setLoading(true);
+      try {
+        const res = await teacherApis.getTimetableTeacher({
+          teacherId,
+          schoolYear: selectedYear,
+          month: String(currentMonth),
+        });
+        setTimetableData(res);
+
+        const today = dayjs();
+        const selectedSchoolYearData = schoolYears.find(
+          (y) => y.schoolYear === selectedYear
+        );
+
+        // Đảm bảo có dữ liệu năm học và ngày bắt đầu để tính toán
+        if (!selectedSchoolYearData || !selectedSchoolYearData.startDate) {
+          setCurrentWeek(1);
+          setLoading(false);
+          return;
+        }
+
+        const schoolStartDate = dayjs(selectedSchoolYearData.startDate);
+        const schoolStartMonth = schoolStartDate.month() + 1;
+        const schoolStartYear = schoolStartDate.year();
+        
+        // Xác định năm lịch của tháng hiện tại
+        const year =
+          currentMonth >= schoolStartMonth
+            ? schoolStartYear
+            : schoolStartYear + 1;
+
+        // Cập nhật currentWeek về tuần hiện tại nếu đang xem tháng và năm hiện tại
+        if (
+          totalWeeksInMonth.length > 0 &&
+          currentMonth === today.month() + 1 &&
+          year === today.year()
+        ) {
+          const index = totalWeeksInMonth.findIndex((week) =>
+            today.isBetween(week.start, week.end, "day", "[]")
+          );
+          // Set tuần hiện tại, hoặc tuần đầu tiên nếu không tìm thấy
+          setCurrentWeek(index >= 0 ? index + 1 : 1);
+        } else {
+          // Nếu không phải tháng hiện tại, luôn về tuần 1
+          setCurrentWeek(1);
+        }
+      } catch (err) {
+        console.error(err);
+        setTimetableData(null);
+        Alert.alert("Lỗi", "Không thể tải thời khóa biểu.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [teacherId, selectedYear, currentMonth, schoolYears, totalWeeksInMonth.length]);
+  // Phụ thuộc vào totalWeeksInMonth.length thay vì toàn bộ object
+
+  useEffect(() => {
+    setSelectedDayIndex(0);
+  }, [currentWeek, currentMonth, selectedYear]);
+
+  const handleWeekChange = (direction: "prev" | "next") => {
+    if (direction === "prev" && currentWeek > 1) {
+      setCurrentWeek(currentWeek - 1);
+    } else if (direction === "next") {
+      const nextWeek = currentWeek + 1;
+      if (nextWeek <= totalWeeksInMonth.length) {
+        setCurrentWeek(nextWeek);
+      } else {
+        Toast.show({
+          type: "info",
+          text1: "Thông báo",
+          text2: "Đã hết các tuần trong tháng này. Vui lòng chọn tháng khác.",
+        });
+      }
+    }
+  };
+
+  const getDaysOfWeek: DayData[] = useMemo(() => {
+    if (
+      !timetableData ||
+      !timetableData.scheduleDays?.length ||
+      currentWeek > totalWeeksInMonth.length ||
+      currentWeek < 1
+    )
+      return [];
+    
+    // Kiểm tra an toàn cho phần tử trong mảng totalWeeksInMonth
+    const weekIndex = currentWeek - 1;
+    const weekData = totalWeeksInMonth[weekIndex]; 
+
+    if (!weekData || !weekData.start || !weekData.end) {
+        return [];
+    }
+    
+    const { start, end } = weekData; 
+
+    return timetableData.scheduleDays.filter((day) =>
+      dayjs(day.date).isBetween(start, end, "day", "[]")
+    );
+  }, [timetableData, currentWeek, totalWeeksInMonth]);
+
+  const selectedDayData: DayData | undefined = useMemo(() => {
+    if (selectedDayIndex < 0 || selectedDayIndex >= getDaysOfWeek?.length) {
+      return undefined;
+    }
+    return getDaysOfWeek[selectedDayIndex];
+  }, [getDaysOfWeek, selectedDayIndex]);
+
+  const handleDayChange = (direction: "prev" | "next") => {
+    if (direction === "prev") {
+      setSelectedDayIndex((prev) => (prev > 0 ? prev - 1 : prev));
+    } else {
+      setSelectedDayIndex((prev) =>
+        prev < getDaysOfWeek?.length - 1 ? prev + 1 : prev
+      );
+    }
+  };
+
+  const uniqueStartTimes = useMemo(() => {
+    if (!getDaysOfWeek?.length) return [];
+    const all = getDaysOfWeek.flatMap((d) => d.activities);
+    const times = [...new Set(all.map((a) => a.startTime))];
+    times.sort((a, b) => (a || 0) - (b || 0));
+    return times;
+  }, [getDaysOfWeek]);
+
+  const dataSource: IScheduleRow[] = useMemo(() => {
+    if (!getDaysOfWeek?.length || uniqueStartTimes?.length === 0) return [];
+
+    return uniqueStartTimes.map((startTime) => {
+      const time = formatMinutesToTime(startTime);
+      const row: IScheduleRow = { key: time, time };
+
+      getDaysOfWeek.forEach((day, index) => {
+        const activity = day.activities.find((a) => a.startTime === startTime);
+        row[`day_${index}`] = activity || null;
+      });
+      return row;
+    });
+  }, [getDaysOfWeek, uniqueStartTimes]);
+
+  const classInfo = timetableData
+    ? `${timetableData.className || ""} (${timetableData.schoolYear || ""})`
+    : "";
+
+  const renderTimeColumn = (isHeader: boolean) => (
+    <View style={newStyles.fixedCol}>
+      {isHeader ? (
+        <View style={[newStyles.headerCell, newStyles.fixedHeaderCell]}>
+          <Text style={newStyles.headerTextCol}>Giờ</Text>
+        </View>
+      ) : (
+        dataSource.map((row) => (
+          <View key={(row as IScheduleRow).key} style={[newStyles.timeCell]}>
+            <Text style={newStyles.timeCellText}>
+              {(row as IScheduleRow).time}
+            </Text>
+          </View>
+        ))
+      )}
+    </View>
+  );
+
+  const renderHeaderRow = () => (
+    <View
+      style={[
+        newStyles.scrollableHeaderRow,
+        { width: getDaysOfWeek?.length * DAY_COLUMN_WIDTH },
+      ]}
+    >
+      {getDaysOfWeek.map((day, dayIndex) => {
+        const isToday = dayjs(day.date).isSame(dayjs(), "day");
+        return (
+          <View
+            key={day._id}
+            style={[
+              newStyles.headerCell,
+              { width: DAY_COLUMN_WIDTH },
+              isToday && newStyles.todayHeader,
+            ]}
+          >
+            <Text
+              style={[
+                newStyles.headerTextCol,
+                isToday && newStyles.todayHeaderText,
+              ]}
+              numberOfLines={1}
+            >
+              {day.dayName.split(" ")[1] || day.dayName}
+            </Text>
+            <Text
+              style={[newStyles.dateText, isToday && newStyles.todayDateText]}
+            >
+              {dayjs(day.date).format("DD/MM")}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+
+  const renderDataRows = () => (
+    <View style={{ width: getDaysOfWeek?.length * DAY_COLUMN_WIDTH }}>
+      {dataSource.map((row, rowIndex) => (
+        <View key={row.key} style={newStyles.dataRow}>
+          {getDaysOfWeek.map((day, dayIndex) => {
+            const activity = row[`day_${dayIndex}`] as IActivity | null;
+
+            if (!activity) {
+              return (
+                <View
+                  key={dayIndex}
+                  style={[newStyles.emptyCell, { width: DAY_COLUMN_WIDTH }]}
+                />
+              );
+>>>>>>> Stashed changes
             }
             cursor = cursor.add(7, 'day');
         }
@@ -172,6 +459,7 @@ const TimeTable = () => {
                 });
                 setTimetableData(res);
 
+<<<<<<< Updated upstream
                 const today = dayjs();
                 const selectedSchoolYearData = schoolYears.find(y => y.schoolYear === selectedYear);
                 if (!selectedSchoolYearData) {
@@ -270,6 +558,27 @@ const TimeTable = () => {
                 dataSource.map((row) => (
                     <View key={(row as IScheduleRow).key} style={[newStyles.timeCell]}>
                         <Text style={newStyles.timeCellText}>{(row as IScheduleRow).time}</Text>
+=======
+                {(activity.type === "Bình thường" ||
+                  activity.type === "Sự kiện") &&
+                  activity.tittle && (
+                    <View style={newStyles.detailsContainer}>
+                      {activity.tittle
+                        .split("\n")
+                        .slice(0, 2)
+                        .map((line, i) => (
+                          <Text
+                            key={i}
+                            style={newStyles.bulletItemRN}
+                            numberOfLines={1}
+                          >
+                            • {line.trim()}
+                          </Text>
+                        ))}
+                      {activity.tittle.split("\n")?.length > 2 && (
+                        <Text style={newStyles.moreText}>...</Text>
+                      )}
+>>>>>>> Stashed changes
                     </View>
                 ))
             )}
@@ -357,6 +666,7 @@ const TimeTable = () => {
         ))
     );
 
+<<<<<<< Updated upstream
     return (
         <View style={newStyles.mainContainer}>
             <Toast />
@@ -388,6 +698,102 @@ const TimeTable = () => {
                                 placeholder="Chọn Tháng"
                             />
                         </View>
+=======
+            {viewMode === "week" ? (
+              <View style={newStyles.weekNavRow}>
+                <Button
+                  icon={
+                    <Icon
+                      name="chevron-left"
+                      type="font-awesome"
+                      color="#007AFF"
+                      size={18}
+                    />
+                  }
+                  onPress={() => handleWeekChange("prev")}
+                  disabled={currentWeek === 1}
+                  buttonStyle={newStyles.navButtonRN}
+                />
+                <View style={newStyles.weekDisplay}>
+                  <Text style={newStyles.weekDisplayText}>
+                    {`Tuần ${currentWeek}`}
+                  </Text>
+                </View>
+                <Button
+                  icon={
+                    <Icon
+                      name="chevron-right"
+                      type="font-awesome"
+                      color="#007AFF"
+                      size={18}
+                    />
+                  }
+                  onPress={() => handleWeekChange("next")}
+                  disabled={currentWeek >= totalWeeksInMonth.length}
+                  buttonStyle={newStyles.navButtonRN}
+                />
+              </View>
+            ) : (
+              <View style={newStyles.weekNavRow}>
+                <Button
+                  icon={
+                    <Icon
+                      name="chevron-left"
+                      type="font-awesome"
+                      color="#007AFF"
+                      size={18}
+                    />
+                  }
+                  onPress={() => handleDayChange("prev")}
+                  disabled={selectedDayIndex === 0}
+                  buttonStyle={newStyles.navButtonRN}
+                />
+                <View style={newStyles.weekDisplay}>
+                  <Text style={newStyles.weekDisplayText}>
+                    {selectedDayData?.dayName || "Ngày"}
+                  </Text>
+                </View>
+                <Button
+                  icon={
+                    <Icon
+                      name="chevron-right"
+                      type="font-awesome"
+                      color="#007AFF"
+                      size={18}
+                    />
+                  }
+                  onPress={() => handleDayChange("next")}
+                  disabled={selectedDayIndex >= getDaysOfWeek?.length - 1}
+                  buttonStyle={newStyles.navButtonRN}
+                />
+              </View>
+            )}
+          </View>
+
+          <View style={newStyles.contentArea}>
+            {loading ? (
+              <ActivityIndicator
+                size="large"
+                color="#007AFF"
+                style={{ marginVertical: 50 }}
+              />
+            ) : !getDaysOfWeek?.length && !loading ? (
+              <View style={newStyles.emptyContainer}>
+                <Icon
+                  name="calendar-times-o"
+                  type="font-awesome"
+                  color="#909090"
+                  size={50}
+                />
+                <Text style={newStyles.emptyText}>
+                  Không có dữ liệu thời khóa biểu
+                </Text>
+              </View>
+            ) : viewMode === "week" ? (
+              <View style={newStyles.weekTableWrapper}>
+                <View style={newStyles.tableHeaderRow}>
+                  {renderTimeColumn(true)}
+>>>>>>> Stashed changes
 
                         <View style={newStyles.segmentControl}>
                             <Button

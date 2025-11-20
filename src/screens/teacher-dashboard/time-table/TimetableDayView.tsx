@@ -66,10 +66,17 @@ const TimetableDayView: React.FC<Props> = ({ getDaysOfWeek }) => {
         if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
     };
 
+<<<<<<< Updated upstream
     const handleNext = () => {
         if (currentIndex < getDaysOfWeek.length - 1)
             setCurrentIndex(currentIndex + 1);
     };
+=======
+  const handleNext = () => {
+    if (currentIndex < getDaysOfWeek?.length - 1)
+      setCurrentIndex(currentIndex + 1);
+  };
+>>>>>>> Stashed changes
 
     if (!currentDay) {
         return (
@@ -117,6 +124,7 @@ const TimetableDayView: React.FC<Props> = ({ getDaysOfWeek }) => {
             };
         });
 
+<<<<<<< Updated upstream
     return (
         // BỌC TOÀN BỘ NỘI DUNG CÓ THỂ CUỘN TRONG ScrollView
         <ScrollView 
@@ -176,6 +184,54 @@ const TimetableDayView: React.FC<Props> = ({ getDaysOfWeek }) => {
             </Card>
         </ScrollView>
     );
+=======
+  return (
+    <ScrollView
+      style={styles.outerScrollView}
+      contentContainerStyle={styles.scrollViewContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <Card containerStyle={styles.cardContainer}>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>
+            {currentDay.dayName} - {dayjs(currentDay.date).format("DD/MM/YYYY")}
+          </Text>
+        </View>
+        <View style={styles.timelineWrapper}>
+          {timelineData?.length === 0 ? (
+            <Text style={styles.holidayText}>
+              🎉 Ngày nghỉ - Không có hoạt động
+            </Text>
+          ) : (
+            <Timeline
+              data={timelineData}
+              timeContainerStyle={styles.timeContainer}
+              timeStyle={styles.timeText}
+              circleSize={24}
+              innerCircle={"icon"}
+              columnFormat="single-column-left"
+              lineColor="#E0E0E0"
+              separator={false}
+              renderFullLine={false}
+              style={styles.timelineStyle}
+              renderDetail={(rowData, sectionID, rowID) => {
+                const act = rowData.description as IActivity;
+                const color = rowData.color as string;
+                return renderDetailContent(act, color);
+              }}
+              options={
+                {
+                  scrollEnabled: false,
+                  contentContainerStyle: styles.timelineContent,
+                } as FlatListProps<any>
+              }
+            />
+          )}
+        </View>
+      </Card>
+    </ScrollView>
+  );
+>>>>>>> Stashed changes
 };
 
 const styles = StyleSheet.create({
