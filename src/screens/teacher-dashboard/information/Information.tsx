@@ -12,11 +12,11 @@ const infoItems = [
     screen: "InformationClass",
   },
   {
-    key: "attendance",
+    key: "attendanceasdfa",
     label: "Điểm danh",
     icon: "clipboard-check",
     color: "#52c41a",
-    screen: "CheckIn",
+    screen: "AttendanceHistory",
   },
   {
     key: "evaluation",
