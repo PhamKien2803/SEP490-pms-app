@@ -42,37 +42,44 @@ const fetchUserData = async () => {
   const res = await axiosAuth.get<ApiUserResponse>(apiEndPoint.CURRENT_USER);
   const { userProfile, permissionListAll } = res.data;
 
-  const user: User = {
+  let user: User = {
     ...userProfile,
     permissionListAll,
-    fullName: "",
   };
+
+  const pId = userProfile.parent || "";
+  if (pId) {
+    const studentsData = await userApis.getStudentByParent(pId);
+    user = {
+      ...user,
+      students: studentsData.students,
+      fullName: studentsData.parent.fullName,
+    };
+  }
+
   return user;
 };
 
-export const getCurrentUser = createAsyncThunk<
-  User,
-  void,
-  { rejectValue: string }
->("auth/getCurrentUser", async (_, { rejectWithValue }) => {
-  try {
-    return await fetchUserData();
-  } catch (err: any) {
-    return rejectWithValue("Không thể tải thông tin người dùng");
-  }
-});
 
-export const forceRefetchUser = createAsyncThunk<
-  User,
-  void,
-  { rejectValue: string }
->("auth/forceRefetchUser", async (_, { rejectWithValue }) => {
-  try {
-    return await fetchUserData();
-  } catch (err: any) {
-    return rejectWithValue("Không thể tải thông tin người dùng");
-  }
-});
+export const getCurrentUser = createAsyncThunk<User, void, { rejectValue: string }>
+  ("auth/getCurrentUser", async (_, { rejectWithValue }) => {
+    try {
+      return await fetchUserData();
+    } catch (err: any) {
+      console.log("🚀 ~ err:", err)
+      return rejectWithValue("Không thể tải thông tin người dùng");
+    }
+  });
+
+export const forceRefetchUser = createAsyncThunk<User, void, { rejectValue: string }>
+  ("auth/forceRefetchUser", async (_, { rejectWithValue }) => {
+    try {
+      return await fetchUserData();
+    } catch (err: any) {
+      console.log("🚀 ~ err:", err)
+      return rejectWithValue("Không thể tải thông tin người dùng");
+    }
+  });
 
 function buildPermissionsMap(
   permissionListAll: PermissionModule[]
