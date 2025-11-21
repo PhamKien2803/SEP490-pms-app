@@ -9,6 +9,10 @@ import TakeAttendance from "../screens/AttendanceHistory/create/TakeAttendance";
 import AttendanceDetails from "../screens/AttendanceHistory/detail/AttendanceDetail";
 import EditAttendance from "../screens/AttendanceHistory/edit/AttendanceEdit";
 import AttendanceHistory from "../screens/AttendanceHistory/AttendanceHistory";
+import FeedbackDetails from "../screens/feedback/detail/FeedbackDetail";
+import EditFeedback from "../screens/feedback/edit/EditFeedback";
+import TakeFeedback from "../screens/feedback/create/TakeFeedback";
+import TakeFeedbackForm from "../screens/feedback/create/TakeFeedbackForm";
 
 export type InformationStackParamList = {
   InformationMain: undefined;
@@ -75,6 +79,27 @@ const InformationStack: React.FC = () => {
         name="EditAttendance"
         component={EditAttendance}
         options={{ title: "Cập nhật điểm danh" }}
+      />
+
+      <Stack.Screen
+        name="FeedbackDetails"
+        component={FeedbackDetails}
+        options={{ title: "Chi tiết đánh giá" }}
+      />
+      <Stack.Screen
+        name="EditFeedback"
+        component={EditFeedback}
+        options={{ title: "Cập nhật đánh giá" }}
+      />
+      <Stack.Screen
+        name="TakeFeedback"
+        component={TakeFeedback}
+        options={{ title: "Danh sách học sinh" }}
+      />
+      <Stack.Screen
+        name="TakeFeedbackForm"
+        component={TakeFeedbackForm}
+        options={{ title: "Tạo đánh giá" }}
       />
     </Stack.Navigator>
   );

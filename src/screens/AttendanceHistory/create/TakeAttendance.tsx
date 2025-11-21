@@ -77,7 +77,7 @@ const TakeAttendance = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const currentClass: IClassInfo | undefined = useMemo(
-    () => teacherData?.classes?.find((c) => c._id === selectedClassId),
+    () => teacherData?.classes?.find((c) => c?._id === selectedClassId),
     [teacherData, selectedClassId]
   );
   const studentList: IStudent[] = useMemo(
@@ -111,7 +111,7 @@ const TakeAttendance = () => {
           );
           setTeacherData(data);
           if (data.classes?.length > 0) {
-            setSelectedClassId(data.classes[0]._id);
+            setSelectedClassId(data?.classes?.[0]?._id);
           } else {
             Alert.alert(
               "Thông báo",
@@ -135,7 +135,7 @@ const TakeAttendance = () => {
   useEffect(() => {
     const defaultState = new Map<string, IStudentAttendanceState>();
     studentList.forEach((student) => {
-      defaultState.set(student._id, {
+      defaultState.set(student?._id, {
         status: "Vắng mặt",
         note: "",
         timeCheckIn: null,
@@ -156,7 +156,7 @@ const TakeAttendance = () => {
           await teacherApis.getAttendanceByClassAndDate(classId, date);
 
         const newState = new Map<string, IStudentAttendanceState>();
-        data.students.forEach((item) => {
+        data?.students?.forEach((item) => {
           let normalizedStatus: TAttendanceStatus;
           const oldStatus = item.status as any;
 
@@ -170,15 +170,15 @@ const TakeAttendance = () => {
             normalizedStatus = "Vắng mặt";
           }
 
-          newState.set(item.student._id, {
+          newState.set(item?.student?._id, {
             status: normalizedStatus,
             note: item.note || item.noteCheckout || "",
             timeCheckIn: item.timeCheckIn || null,
           });
         });
         setAttendanceState(newState);
-        setGeneralNote(data.generalNote || "");
-        setCurrentAttendanceId(data._id);
+        setGeneralNote(data?.generalNote || "");
+        setCurrentAttendanceId(data?._id);
 
         if (dayjs().isSame(selectedDate, "day")) {
           Alert.alert(
@@ -192,7 +192,7 @@ const TakeAttendance = () => {
         }
         const defaultState = new Map<string, IStudentAttendanceState>();
         studentList.forEach((student) => {
-          defaultState.set(student._id, {
+          defaultState.set(student?._id, {
             status: "Vắng mặt",
             note: "",
             timeCheckIn: null,
@@ -281,8 +281,8 @@ const TakeAttendance = () => {
     }));
 
     const payload: IAttendanceCreatePayload = {
-      class: currentClass._id,
-      schoolYear: currentClass.schoolYear._id,
+      class: currentClass?._id,
+      schoolYear: currentClass?.schoolYear?._id,
       date: selectedDate.format("YYYY-MM-DD"),
       students: studentsPayload,
       takenBy: teacherId,
@@ -291,7 +291,7 @@ const TakeAttendance = () => {
 
     try {
       const res = await teacherApis.createAttendance(payload);
-      setCurrentAttendanceId(res._id);
+      setCurrentAttendanceId(res?._id);
       Alert.alert("Thành công", "Đã lưu điểm danh thành công!");
     } catch (error: any) {
       Alert.alert("Lỗi", error.toString() || "Lưu điểm danh thất bại.");
@@ -329,7 +329,7 @@ const TakeAttendance = () => {
   }
 
   const renderStudentItem = (student: IStudent) => {
-    const state = attendanceState.get(student._id) || {
+    const state = attendanceState.get(student?._id) || {
       status: "Vắng mặt" as TAttendanceStatus,
       note: "",
       timeCheckIn: null,
@@ -337,7 +337,7 @@ const TakeAttendance = () => {
     const config = STATUS_CONFIG[state.status];
 
     return (
-      <View key={student._id} style={styles.studentItem}>
+      <View key={student?._id} style={styles.studentItem}>
         <View style={styles.studentInfo}>
           <Image
             source={
@@ -368,7 +368,7 @@ const TakeAttendance = () => {
                     { borderColor: cfg.color },
                   ]}
                   onPress={() =>
-                    handleAttendanceChange(student._id, "status", sKey)
+                    handleAttendanceChange(student?._id, "status", sKey)
                   }
                   disabled={
                     currentAttendanceId !== null || isPastDate || isFutureDate
@@ -407,7 +407,7 @@ const TakeAttendance = () => {
               placeholder="Ghi chú (Bị ốm, ...)"
               value={state.note}
               onChangeText={(text) =>
-                handleAttendanceChange(student._id, "note", text)
+                handleAttendanceChange(student?._id, "note", text)
               }
               multiline
               numberOfLines={2}
