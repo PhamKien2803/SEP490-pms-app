@@ -212,7 +212,7 @@ const TimeTable = () => {
           (a, b) => dayjs(b.startDate).unix() - dayjs(a.startDate).unix()
         );
         setSchoolYears(sorted);
-        if (sorted.length > 0) {
+        if (sorted?.length > 0) {
           setSelectedYear(sorted[0].schoolYear);
         }
       })
@@ -225,7 +225,7 @@ const TimeTable = () => {
     const selectedSchoolYearData = schoolYears.find(
       (y) => y.schoolYear === selectedYear
     );
-    if (!selectedSchoolYearData) return [];
+    if (!selectedSchoolYearData || !selectedSchoolYearData.startDate) return [];
 
     const schoolStartDate = dayjs(selectedSchoolYearData.startDate);
     const schoolStartMonth = schoolStartDate.month() + 1;
@@ -239,17 +239,21 @@ const TimeTable = () => {
 
     let cursor;
     const dayOfWeek = firstDayOfMonth.day();
+    // Monday is 1, Sunday is 0. If Sunday, go back 6 days to Monday
     if (dayOfWeek === 0) {
       cursor = firstDayOfMonth.subtract(6, "day");
     } else {
+      // Go back dayOfWeek - 1 days to Monday
       cursor = firstDayOfMonth.subtract(dayOfWeek - 1, "day");
     }
 
     const weeks: { start: dayjs.Dayjs; end: dayjs.Dayjs }[] = [];
 
+    // Lặp qua các tuần, bắt đầu từ tuần chứa ngày đầu tháng
     while (cursor.isSameOrBefore(lastDayOfMonth.endOf("week"), "day")) {
       const weekStart = cursor.startOf("day");
       const weekEnd = cursor.add(6, "day").endOf("day");
+      // Chỉ thêm tuần nếu nó có chứa ít nhất một ngày của tháng
       if (weekStart.isSameOrBefore(lastDayOfMonth, "day")) {
         weeks.push({ start: weekStart, end: weekEnd });
       }
@@ -260,7 +264,13 @@ const TimeTable = () => {
   }, [currentMonth, selectedYear, schoolYears]);
 
   useEffect(() => {
-    if (!teacherId || !selectedYear) return;
+    if (!teacherId || !selectedYear) {
+      // Nếu chưa có teacherId hoặc selectedYear, không fetch
+      setTimetableData(null);
+      setLoading(false);
+      return;
+    }
+
     const fetch = async () => {
       setLoading(true);
       try {
@@ -275,18 +285,25 @@ const TimeTable = () => {
         const selectedSchoolYearData = schoolYears.find(
           (y) => y.schoolYear === selectedYear
         );
-        if (!selectedSchoolYearData) {
+
+        // Đảm bảo có dữ liệu năm học và ngày bắt đầu để tính toán
+        if (!selectedSchoolYearData || !selectedSchoolYearData.startDate) {
           setCurrentWeek(1);
+          setLoading(false);
           return;
         }
+
         const schoolStartDate = dayjs(selectedSchoolYearData.startDate);
         const schoolStartMonth = schoolStartDate.month() + 1;
         const schoolStartYear = schoolStartDate.year();
+
+        // Xác định năm lịch của tháng hiện tại
         const year =
           currentMonth >= schoolStartMonth
             ? schoolStartYear
             : schoolStartYear + 1;
 
+        // Cập nhật currentWeek về tuần hiện tại nếu đang xem tháng và năm hiện tại
         if (
           totalWeeksInMonth.length > 0 &&
           currentMonth === today.month() + 1 &&
@@ -295,8 +312,10 @@ const TimeTable = () => {
           const index = totalWeeksInMonth.findIndex((week) =>
             today.isBetween(week.start, week.end, "day", "[]")
           );
+          // Set tuần hiện tại, hoặc tuần đầu tiên nếu không tìm thấy
           setCurrentWeek(index >= 0 ? index + 1 : 1);
         } else {
+          // Nếu không phải tháng hiện tại, luôn về tuần 1
           setCurrentWeek(1);
         }
       } catch (err) {
@@ -308,7 +327,14 @@ const TimeTable = () => {
       }
     };
     fetch();
-  }, [teacherId, selectedYear, currentMonth, schoolYears, totalWeeksInMonth]);
+  }, [
+    teacherId,
+    selectedYear,
+    currentMonth,
+    schoolYears,
+    totalWeeksInMonth.length,
+  ]);
+  // Phụ thuộc vào totalWeeksInMonth.length thay vì toàn bộ object
 
   useEffect(() => {
     setSelectedDayIndex(0);
@@ -334,36 +360,45 @@ const TimeTable = () => {
   const getDaysOfWeek: DayData[] = useMemo(() => {
     if (
       !timetableData ||
+      !timetableData.scheduleDays?.length ||
       currentWeek > totalWeeksInMonth.length ||
       currentWeek < 1
     )
       return [];
-    const { start, end } = totalWeeksInMonth[currentWeek - 1] || {};
-    if (!start || !end) return [];
+
+    // Kiểm tra an toàn cho phần tử trong mảng totalWeeksInMonth
+    const weekIndex = currentWeek - 1;
+    const weekData = totalWeeksInMonth[weekIndex];
+
+    if (!weekData || !weekData.start || !weekData.end) {
+      return [];
+    }
+
+    const { start, end } = weekData;
+
     return timetableData.scheduleDays.filter((day) =>
       dayjs(day.date).isBetween(start, end, "day", "[]")
     );
   }, [timetableData, currentWeek, totalWeeksInMonth]);
 
   const selectedDayData: DayData | undefined = useMemo(() => {
-    if (selectedDayIndex < 0 || selectedDayIndex >= getDaysOfWeek.length) {
+    if (selectedDayIndex < 0 || selectedDayIndex >= getDaysOfWeek?.length) {
       return undefined;
     }
     return getDaysOfWeek[selectedDayIndex];
   }, [getDaysOfWeek, selectedDayIndex]);
-
   const handleDayChange = (direction: "prev" | "next") => {
     if (direction === "prev") {
       setSelectedDayIndex((prev) => (prev > 0 ? prev - 1 : prev));
     } else {
       setSelectedDayIndex((prev) =>
-        prev < getDaysOfWeek.length - 1 ? prev + 1 : prev
+        prev < getDaysOfWeek?.length - 1 ? prev + 1 : prev
       );
     }
   };
 
   const uniqueStartTimes = useMemo(() => {
-    if (!getDaysOfWeek.length) return [];
+    if (!getDaysOfWeek?.length) return [];
     const all = getDaysOfWeek.flatMap((d) => d.activities);
     const times = [...new Set(all.map((a) => a.startTime))];
     times.sort((a, b) => (a || 0) - (b || 0));
@@ -371,7 +406,7 @@ const TimeTable = () => {
   }, [getDaysOfWeek]);
 
   const dataSource: IScheduleRow[] = useMemo(() => {
-    if (!getDaysOfWeek.length || uniqueStartTimes.length === 0) return [];
+    if (!getDaysOfWeek?.length || uniqueStartTimes?.length === 0) return [];
 
     return uniqueStartTimes.map((startTime) => {
       const time = formatMinutesToTime(startTime);
@@ -411,10 +446,10 @@ const TimeTable = () => {
     <View
       style={[
         newStyles.scrollableHeaderRow,
-        { width: getDaysOfWeek.length * DAY_COLUMN_WIDTH },
+        { width: getDaysOfWeek?.length * DAY_COLUMN_WIDTH },
       ]}
     >
-      {getDaysOfWeek.map((day) => {
+      {getDaysOfWeek.map((day, dayIndex) => {
         const isToday = dayjs(day.date).isSame(dayjs(), "day");
         return (
           <View
@@ -446,7 +481,7 @@ const TimeTable = () => {
   );
 
   const renderDataRows = () => (
-    <View style={{ width: getDaysOfWeek.length * DAY_COLUMN_WIDTH }}>
+    <View style={{ width: getDaysOfWeek?.length * DAY_COLUMN_WIDTH }}>
       {dataSource.map((row, rowIndex) => (
         <View key={row.key} style={newStyles.dataRow}>
           {getDaysOfWeek.map((day, dayIndex) => {
@@ -524,12 +559,11 @@ const TimeTable = () => {
                             • {line.trim()}
                           </Text>
                         ))}
-                      {activity.tittle.split("\n").length > 2 && (
+                      {activity.tittle.split("\n")?.length > 2 && (
                         <Text style={newStyles.moreText}>...</Text>
                       )}
                     </View>
                   )}
-
                 {activity.endTime !== activity.startTime && (
                   <Text style={newStyles.endTimeText}>
                     - {formatMinutesToTime(activity.endTime)}
@@ -683,7 +717,7 @@ const TimeTable = () => {
                     />
                   }
                   onPress={() => handleDayChange("next")}
-                  disabled={selectedDayIndex >= getDaysOfWeek.length - 1}
+                  disabled={selectedDayIndex >= getDaysOfWeek?.length - 1}
                   buttonStyle={newStyles.navButtonRN}
                 />
               </View>
@@ -697,7 +731,7 @@ const TimeTable = () => {
                 color="#007AFF"
                 style={{ marginVertical: 50 }}
               />
-            ) : !getDaysOfWeek.length && !loading ? (
+            ) : !getDaysOfWeek?.length && !loading ? (
               <View style={newStyles.emptyContainer}>
                 <Icon
                   name="calendar-times-o"
