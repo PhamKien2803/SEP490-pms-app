@@ -22,7 +22,7 @@ export const apiEndPoint = {
   GET_LIST_POST: (teacherId: string) =>
     `/posts/getPostFileByTeacher/${teacherId}`,
   DELETE_POST: (postId: string) => `/posts/delete/${postId}`,
-  DELETE_IMAGE: (imageId: string) => `/post-files/${imageId}/delete`,
+  DELETE_IMAGE: (imageId: string) => `/posts/${imageId}/delete`,
   UPDATE_POST: (postId: string) => `/posts/update/${postId}`,
   GET_LIST_POST_BY_STUDENT: (studentId: string) =>
     `/dashboard-posts/getPostFileByStudent/${studentId}`,
@@ -187,6 +187,5 @@ export const apiEndPoint = {
     `/guardians/listByStudent/${studentId}`,
   GET_LIST_GUARDIAN_BY_PARENT: (parentId: string) =>
     `/guardians/listByParent/${parentId}`,
-  GET_TUITION_BY_PARENT: (parentId: string) =>
-    `/tuitions/detail/${parentId}`,
+  GET_TUITION_BY_PARENT: (parentId: string) => `/tuitions/detail/${parentId}`,
 };

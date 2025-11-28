@@ -6,17 +6,21 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Platform,
+  Dimensions,
+  ActivityIndicator,
+  Image,
 } from "react-native";
 import { Button, Icon } from "react-native-elements";
 import Toast from "react-native-toast-message";
-import Image from "react-native-elements/dist/image/Image";
+import { StackScreenProps } from "@react-navigation/stack";
+import * as ImagePicker from "expo-image-picker";
+
 import { FileInfo, Post } from "../../../../types/post";
 import { postApis } from "../../../../services/apiServices";
 
 const MAX_PHOTOS = 10;
+const { width } = Dimensions.get("window");
 
-// Kiểu dữ liệu cho file được chọn trong React Native
 interface NewPickedFile {
   uri: string;
   name: string;
@@ -24,17 +28,62 @@ interface NewPickedFile {
   isNew?: boolean;
 }
 
-interface EditPostProps {
-  post: Post;
-  onEditSuccess: () => void;
-  onCancel: () => void;
-}
+type RootStackParamList = {
+  ListPostScreen: undefined;
+  CreatePostScreen: { onPostSuccess: () => void };
+  EditPostScreen: { post: Post; onEditSuccess: () => void };
+};
 
-const EditPost: React.FC<EditPostProps> = ({
-  post,
-  onEditSuccess,
-  onCancel,
+type EditPostScreenProps = StackScreenProps<
+  RootStackParamList,
+  "EditPostScreen"
+>;
+
+// Component nhỏ để xử lý tải ảnh và ActivityIndicator
+const ImageWithLoader: React.FC<{ uri: string; style: any }> = ({
+  uri,
+  style,
 }) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
+  }, [uri]);
+
+  if (error) {
+    return (
+      <View style={[style, styles.errorPlaceholder]}>
+        <Icon name="warning" type="antdesign" size={30} color="#ff4d4f" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={style}>
+      <Image
+        source={{ uri: uri }}
+        style={style}
+        onLoad={() => setLoading(false)}
+        onError={() => {
+          setLoading(false);
+          setError(true);
+        }}
+        resizeMode="cover"
+      />
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator color="#1890ff" size="small" />
+        </View>
+      )}
+    </View>
+  );
+};
+
+const EditPost: React.FC<EditPostScreenProps> = ({ navigation, route }) => {
+  const { post, onEditSuccess } = route.params;
+
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,24 +98,65 @@ const EditPost: React.FC<EditPostProps> = ({
     setExistingMedia(post.files || []);
   }, [post]);
 
-  const handlePickFiles = () => {
-    // Đây là nơi bạn sẽ gọi thư viện chọn file (ví dụ: react-native-document-picker)
-    // và nhận về mảng các đối tượng { uri, name, type }
-    const newFiles: NewPickedFile[] = [];
+  const handlePickFiles = async () => {
+    const availableSlots =
+      MAX_PHOTOS - existingMedia?.length - fileList?.length;
 
-    const totalMedia =
-      existingMedia?.length + fileList?.length + newFiles?.length;
-    if (totalMedia > MAX_PHOTOS) {
+    if (availableSlots <= 0) {
       Toast.show({
-        type: "warning",
-        text1: `Tổng số media không được vượt quá ${MAX_PHOTOS}.`,
+        type: "info",
+        text1: `Bạn đã đạt giới hạn ${MAX_PHOTOS} files. Vui lòng xóa bớt file đã có hoặc file mới thêm.`,
       });
+      return;
     }
 
-    const maxNewFiles = MAX_PHOTOS - existingMedia?.length - fileList?.length;
+    try {
+      const { status } = await ImagePicker.getMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        const { status: newStatus } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (newStatus !== "granted") {
+          Toast.show({
+            type: "error",
+            text1: "Không có quyền truy cập thư viện ảnh.",
+          });
+          return;
+        }
+      }
 
-    if (maxNewFiles > 0) {
-      setFileList((prev) => [...prev, ...newFiles.slice(0, maxNewFiles)]);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsMultipleSelection: true,
+        selectionLimit: availableSlots,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets) {
+        const newFiles: NewPickedFile[] = result.assets.map((asset: any) => {
+          const isVideo = asset.mediaType === "video";
+          const fileExtension =
+            asset.uri.split(".").pop() || (isVideo ? "mp4" : "jpeg");
+          const fileType =
+            asset.mimeType || `${isVideo ? "video" : "image"}/${fileExtension}`;
+
+          return {
+            uri: asset.uri,
+            name: asset.fileName || `file.${fileExtension}`,
+            type: fileType,
+            isNew: true,
+          };
+        });
+
+        setFileList((prev) => [...prev, ...newFiles]);
+
+        Toast.show({
+          type: "success",
+          text1: `Đã thêm ${newFiles.length} file mới.`,
+        });
+      }
+    } catch (error) {
+      console.error("Lỗi chọn file:", error);
+      Toast.show({ type: "error", text1: "Lỗi khi chọn file." });
     }
   };
 
@@ -77,9 +167,7 @@ const EditPost: React.FC<EditPostProps> = ({
   const handleRemoveExistingMedia = async (mediaId: string) => {
     try {
       setIsLoading(true);
-
       await postApis.deleteImage(mediaId);
-
       Toast.show({ type: "success", text1: "Đã xóa media thành công." });
       setExistingMedia((prev) => prev.filter((media) => media._id !== mediaId));
     } catch (error: any) {
@@ -95,7 +183,6 @@ const EditPost: React.FC<EditPostProps> = ({
 
   const onSave = async () => {
     const newFilesToUpload = fileList;
-
     if (!title.trim() || !content.trim()) {
       Toast.show({
         type: "error",
@@ -103,7 +190,6 @@ const EditPost: React.FC<EditPostProps> = ({
       });
       return;
     }
-
     if (existingMedia?.length + newFilesToUpload?.length > MAX_PHOTOS) {
       Toast.show({
         type: "error",
@@ -125,8 +211,16 @@ const EditPost: React.FC<EditPostProps> = ({
       await postApis.updatePost(post.postId, updateParams);
 
       if (newFilesToUpload?.length > 0) {
-        await postApis.uploadAlbum(post.postId, newFilesToUpload as any);
-
+        const formData = new FormData();
+        formData.append("postId", post.postId);
+        newFilesToUpload.forEach((file) => {
+          formData.append("album", {
+            uri: file.uri,
+            name: file.name,
+            type: file.type,
+          } as any);
+        });
+        await postApis.uploadAlbum(post.postId, formData as any);
         Toast.show({
           type: "success",
           text1: "Cập nhật bài viết và album ảnh thành công!",
@@ -137,6 +231,7 @@ const EditPost: React.FC<EditPostProps> = ({
 
       setFileList([]);
       onEditSuccess();
+      navigation.goBack();
     } catch (error: any) {
       console.error("Lỗi cập nhật bài viết:", error);
       Toast.show({
@@ -150,33 +245,23 @@ const EditPost: React.FC<EditPostProps> = ({
 
   const currentTotalMedia = existingMedia?.length + fileList?.length;
 
+  const handleCancel = () => {
+    navigation.goBack();
+  };
+
   return (
     <ScrollView
       style={styles.scrollContainer}
       contentContainerStyle={styles.contentContainer}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.headerCard}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={onCancel} disabled={isLoading}>
-            <Icon
-              name="arrow-left"
-              type="font-awesome"
-              size={24}
-              color="#000"
-            />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            <Icon name="edit" type="font-awesome" size={20} color="#faad14" />{" "}
-            Chỉnh Sửa
-          </Text>
-        </View>
-        <Text style={styles.teacherText}>
-          Bài viết của: {post?.teacher?.fullName}
-        </Text>
-      </View>
-
       <View style={styles.formCard}>
+        <Text style={styles.teacherTextTop}>
+          Bài viết của:{" "}
+          <Text style={styles.teacherNameHighlight}>
+            {post?.teacher?.fullName}
+          </Text>
+        </Text>
         <Text style={styles.label}>Tiêu đề</Text>
         <TextInput
           placeholder="Tiêu đề bài viết..."
@@ -185,7 +270,6 @@ const EditPost: React.FC<EditPostProps> = ({
           style={styles.inputTitle}
           editable={!isLoading}
         />
-
         <Text style={styles.label}>Nội dung</Text>
         <TextInput
           placeholder="Nội dung bài viết"
@@ -196,7 +280,6 @@ const EditPost: React.FC<EditPostProps> = ({
           style={styles.textArea}
           editable={!isLoading}
         />
-
         <Text style={styles.mediaTitle}>
           Quản Lý Ảnh/Video ({currentTotalMedia}/{MAX_PHOTOS})
         </Text>
@@ -210,17 +293,9 @@ const EditPost: React.FC<EditPostProps> = ({
               {existingMedia.map((file) => (
                 <View key={file._id} style={styles.mediaItem}>
                   {file.fileType === "image" ? (
-                    <Image
-                      source={{ uri: file.fileUrl }}
+                    <ImageWithLoader
+                      uri={file.fileUrl}
                       style={styles.mediaThumbnail}
-                      PlaceholderContent={
-                        <Icon
-                          name="image"
-                          type="font-awesome"
-                          size={30}
-                          color="#999"
-                        />
-                      }
                     />
                   ) : (
                     <View style={styles.videoPlaceholder}>
@@ -256,12 +331,19 @@ const EditPost: React.FC<EditPostProps> = ({
           <View style={styles.mediaRow}>
             {fileList.map((file, index) => (
               <View key={`new-${index}`} style={styles.mediaItem}>
-                <Icon
-                  name="file-image-o"
-                  type="font-awesome"
-                  size={30}
-                  color="#999"
-                />
+                {file.type.startsWith("image/") ? (
+                  <ImageWithLoader
+                    uri={file.uri}
+                    style={styles.mediaThumbnail}
+                  />
+                ) : (
+                  <Icon
+                    name="file-video-o"
+                    type="font-awesome"
+                    size={30}
+                    color="#999"
+                  />
+                )}
                 <TouchableOpacity
                   style={styles.removeFileButton}
                   onPress={() => handleRemoveNewFile(index)}
@@ -306,7 +388,7 @@ const EditPost: React.FC<EditPostProps> = ({
         />
         <Button
           title="Hủy Bỏ"
-          onPress={onCancel}
+          onPress={handleCancel}
           disabled={isLoading}
           type="outline"
           buttonStyle={styles.cancelButton}
@@ -324,38 +406,19 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     alignItems: "center",
-    paddingVertical: 24,
+    paddingVertical: 10,
   },
-  headerCard: {
-    width: "90%",
-    maxWidth: 600,
-    backgroundColor: "#fff",
-    padding: 15,
-    marginBottom: 20,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    paddingBottom: 5,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#faad14",
-  },
-  teacherText: {
-    textAlign: "right",
+  // THÊM STYLE MỚI CHO TÊN GV
+  teacherTextTop: {
+    textAlign: "left",
     color: "#666",
     fontSize: 14,
-    marginTop: 5,
+    marginBottom: 15,
+  },
+  teacherNameHighlight: {
+    fontWeight: "bold",
+    color: "#333",
+    fontSize: 15,
   },
   formCard: {
     width: "90%",
@@ -427,13 +490,13 @@ const styles = StyleSheet.create({
     marginRight: 10,
     marginBottom: 10,
     position: "relative",
-    overflow: "hidden",
+    overflow: "visible", // QUAN TRỌNG: Đảm bảo icon xóa nằm ngoài được hiển thị
     backgroundColor: "#f0f0f0",
   },
   mediaThumbnail: {
     width: "100%",
     height: "100%",
-    objectFit: "cover",
+    resizeMode: "cover",
   },
   videoPlaceholder: {
     backgroundColor: "#262626",
@@ -444,15 +507,17 @@ const styles = StyleSheet.create({
   },
   removeFileButton: {
     position: "absolute",
-    top: -5,
-    right: -5,
-    zIndex: 10,
+    top: -8, // Đẩy lên trên
+    right: -8, // Đẩy sang phải
+    zIndex: 10, // QUAN TRỌNG: Đảm bảo nó nằm trên tất cả
   },
   removeIconContainer: {
     backgroundColor: "white",
-    borderRadius: 10,
-    padding: 0,
-    opacity: 0.85,
+    borderRadius: 15,
+    padding: 2,
+    opacity: 1,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
   uploadButtonPlaceholder: {
     width: 80,
@@ -478,6 +543,17 @@ const styles = StyleSheet.create({
     borderColor: "#d9d9d9",
     borderRadius: 6,
     color: "#000",
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(240, 240, 240, 0.7)",
+  },
+  errorPlaceholder: {
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
   },
 });
 
