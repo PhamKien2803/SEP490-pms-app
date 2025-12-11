@@ -266,7 +266,7 @@ const EditAttendance = ({ route }: any) => {
             source={
               item.student.imageStudent
                 ? { uri: item.student.imageStudent }
-                : require("../../../assets/backgroundDolphin.png")
+                : require("../../../assets/logoDolphin.png")
             }
             style={styles.avatar}
           />

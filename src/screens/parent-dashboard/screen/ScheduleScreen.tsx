@@ -204,7 +204,7 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
         
         {/* Header Tiêu đề */}
         <View style={styles.header}>
-          <MaterialCommunityIcons name="calendar-month" size={28} color={COLORS.primaryDark} />
+          {/* <MaterialCommunityIcons name="calendar-month" size={28} color={COLORS.primaryDark} /> */}
           <Text style={styles.headerTitle}>Lịch học</Text>
         </View>
 

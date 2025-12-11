@@ -6,15 +6,15 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  ImageBackground, // Thêm ImageBackground
-  TouchableOpacity, // Thêm TouchableOpacity để làm nút bấm đẹp hơn
-  SafeAreaView, // Thêm SafeAreaView
-  ScrollView, // Thêm ScrollView để tránh lỗi khi bàn phím hiện
+  ImageBackground,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
   Platform,
   KeyboardAvoidingView,
+  Image, // Thêm import Image
 } from "react-native";
-// Thêm icon
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import {
   getCurrentUser,
@@ -22,20 +22,25 @@ import {
   setToken,
   setUserProfile,
 } from "../redux/authSlice";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { AuthStackParamList } from "../routes/AuthStack";
 
-// Bảng màu chủ đạo (Xanh da trời)
+type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
+
 const COLORS = {
-  primary: "#00b4d8", // Xanh da trời chính cho nút bấm
-  primaryDark: "#0077b6", // Xanh đậm cho tiêu đề
+  primary: "#00b4d8",
+  primaryDark: "#0077b6",
   white: "#FFFFFF",
-  lightBlue: "#caf0f8", // Xanh nhạt cho nền form
-  text: "#03045e", // Màu text (xanh navy đậm)
-  grey: "#adb5bd", // Màu cho placeholder, border
-  error: "#d00000", // Màu lỗi
+  lightBlue: "#caf0f8",
+  text: "#03045e",
+  grey: "#adb5bd",
+  error: "#d00000",
 };
 
 const LoginScreen: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<LoginScreenNavigationProp>();
   const isLoading = useAppSelector((s) => s.auth.isLoginPending);
   const loginError = useAppSelector((s) => s.auth.loginError);
 
@@ -53,13 +58,18 @@ const LoginScreen: React.FC = () => {
       dispatch(setToken(response));
       dispatch(setUserProfile(profile));
     } catch (err) {
-      // Lỗi đã được xử lý bởi slice (loginError), không cần console.log
+      // Error handled by slice
     }
+  };
+
+  // --- Hàm điều hướng sang màn hình Quên mật khẩu ---
+  const handleForgotPassword = () => {
+    navigation.navigate('ForgotPassword');
   };
 
   return (
     <ImageBackground
-      source={require("../assets/backgroundDolphin.png")}
+      // source={require("../assets/backgroundDolphin.png")}
       resizeMode="cover"
       style={styles.background}
     >
@@ -70,22 +80,20 @@ const LoginScreen: React.FC = () => {
         >
           <ScrollView
             contentContainerStyle={styles.container}
-            keyboardShouldPersistTaps="handled" // Đóng bàn phím khi nhấn ra ngoài
+            keyboardShouldPersistTaps="handled"
           >
-            {/* Logo hoặc Icon trường */}
             <View style={styles.logoContainer}>
-              <MaterialCommunityIcons
-                name="school"
-                size={80}
-                color={COLORS.primaryDark}
+              {/* Thay thế icon bằng Logo Dolphin */}
+              <Image 
+                source={require("../assets/logoDolphin.png")}
+                style={styles.logo}
+                resizeMode="contain"
               />
               <Text style={styles.title}>Cá Heo Xanh</Text>
               <Text style={styles.subtitle}>Đăng nhập</Text>
             </View>
 
-            {/* Form đăng nhập */}
             <View style={styles.formContainer}>
-              {/* Input Email */}
               <View style={styles.inputContainer}>
                 <MaterialCommunityIcons
                   name="email-outline"
@@ -104,7 +112,6 @@ const LoginScreen: React.FC = () => {
                 />
               </View>
 
-              {/* Input Mật khẩu */}
               <View style={styles.inputContainer}>
                 <MaterialCommunityIcons
                   name="lock-outline"
@@ -122,12 +129,18 @@ const LoginScreen: React.FC = () => {
                 />
               </View>
 
-              {/* Hiển thị lỗi */}
               {loginError?.message ? (
                 <Text style={styles.error}>{loginError.message}</Text>
               ) : null}
 
-              {/* Nút bấm hoặc loading */}
+              {/* --- LINK QUÊN MẬT KHẨU --- */}
+              <TouchableOpacity 
+                style={styles.forgotPasswordContainer}
+                onPress={handleForgotPassword}
+              >
+                 <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+              </TouchableOpacity>
+
               {isLoading ? (
                 <ActivityIndicator
                   size="large"
@@ -153,7 +166,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.3)", // Lớp phủ mờ nhẹ
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
   },
   container: {
     flexGrow: 1,
@@ -164,11 +177,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 40,
   },
+  // Style mới cho Logo
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 10,
+  },
   title: {
     fontSize: 40,
     fontWeight: "bold",
     color: COLORS.primaryDark,
-    marginTop: 10,
+    marginTop: 5, // Giảm margin top một chút vì logo đã có margin bottom
   },
   subtitle: {
     fontSize: 24,
@@ -176,8 +195,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   formContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)", // Nền form trắng mờ
-    borderRadius: 20, // Bo góc mềm mại
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 20,
     padding: 24,
     shadowColor: "#000",
     shadowOffset: {
@@ -192,11 +211,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.white,
-    borderRadius: 12, // Bo góc ô input
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.grey,
-    marginBottom: 16, // Tăng khoảng cách
-    height: 55, // Tăng chiều cao
+    marginBottom: 16,
+    height: 55,
   },
   inputIcon: {
     paddingHorizontal: 15,
@@ -234,6 +253,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
+  // Style cho Quên mật khẩu
+  forgotPasswordContainer: {
+    alignSelf: 'flex-end',
+    marginBottom: 20,
+  },
+  forgotPasswordText: {
+    color: COLORS.primaryDark,
+    fontWeight: '600',
+    fontSize: 14,
+  }
 });
 
 export default LoginScreen;

@@ -230,12 +230,12 @@ const FeedbackScreen: React.FC<Props> = ({ route, navigation }) => {
         </TouchableOpacity>
         
         <View style={styles.headerTitleContainer}>
-          <MaterialCommunityIcons
+          {/* <MaterialCommunityIcons
             name="file-star-outline"
             size={24}
             color={COLORS.primaryDark}
             style={{ marginRight: 8 }}
-          />
+          /> */}
           <Text style={styles.headerTitle}>Nhận xét ngày</Text>
         </View>
 

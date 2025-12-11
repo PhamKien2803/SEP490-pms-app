@@ -343,7 +343,7 @@ const TakeAttendance = () => {
             source={
               student.imageStudent
                 ? { uri: student.imageStudent }
-                : require("../../../assets/backgroundDolphin.png")
+                : require("../../../assets/logoDolphin.png")
             }
             style={styles.avatar}
           />

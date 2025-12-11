@@ -8,7 +8,6 @@ import {
   Alert,
   SafeAreaView,
   StatusBar,
-  Image,
   Dimensions
 } from 'react-native';
 import { useAppDispatch } from '../redux/hooks';
@@ -20,9 +19,10 @@ import { Picker } from '@react-native-picker/picker';
 import type { User, Student } from '../types/user';
 import { AuthStackParamList } from '../routes/AuthStack';
 
+// Định nghĩa lại NavProp để bao gồm các màn hình mới nếu chưa cập nhật trong file gốc
 type NavProp = NativeStackNavigationProp<AuthStackParamList, 'Home'>;
 
-type StudentScreen = 'Schedule' | 'Menu' | 'Feedback' | 'Attendance' | 'HealthProfile' | 'GuardianList' | 'Tuition';
+type StudentScreen = 'Schedule' | 'Menu' | 'Feedback' | 'Attendance' | 'HealthProfile' | 'GuardianList' | 'Tuition' | 'Post';
 
 interface MenuItem {
   id: string;
@@ -30,26 +30,25 @@ interface MenuItem {
   icon: string;
   iconSet: 'FontAwesome5' | 'MaterialCommunityIcons' | 'MaterialIcons' | 'Ionicons';
   screen: StudentScreen | 'Login';
-  color: string; // Màu nền cho icon
+  color: string; 
 }
 
-// Danh sách menu với màu sắc tùy chỉnh cho từng mục
 const menuItems: MenuItem[] = [
-  { id: '1', name: 'Thời khóa biểu', icon: 'calendar-alt', iconSet: 'FontAwesome5', screen: 'Schedule', color: '#42A5F5' }, // Blue
-  { id: '2', name: 'Thực đơn', icon: 'food-fork-drink', iconSet: 'MaterialCommunityIcons', screen: 'Menu', color: '#FFA726' }, // Orange
-  { id: '3', name: 'Đánh giá', icon: 'star', iconSet: 'FontAwesome5', screen: 'Feedback', color: '#FFCA28' }, // Amber
-  { id: '4', name: 'Điểm danh', icon: 'clipboard-check-outline', iconSet: 'MaterialCommunityIcons', screen: 'Attendance', color: '#66BB6A' }, // Green
-  { id: '5', name: 'Sức khỏe', icon: 'heartbeat', iconSet: 'FontAwesome5', screen: 'HealthProfile', color: '#EF5350' }, // Red
-  { id: '7', name: 'Người đưa đón', icon: 'people-circle', iconSet: 'Ionicons', screen: 'GuardianList', color: '#AB47BC' }, // Purple
-  { id: '8', name: 'Học phí', icon: 'cash-multiple', iconSet: 'MaterialCommunityIcons', screen: 'Tuition', color: '#26C6DA' }, // Cyan
-  { id: '6', name: 'Đăng xuất', icon: 'logout', iconSet: 'MaterialIcons', screen: 'Login', color: '#78909C' }, // Grey
+  { id: '1', name: 'Thời khóa biểu', icon: 'calendar-alt', iconSet: 'FontAwesome5', screen: 'Schedule', color: '#42A5F5' },
+  { id: '2', name: 'Thực đơn', icon: 'food-fork-drink', iconSet: 'MaterialCommunityIcons', screen: 'Menu', color: '#FFA726' },
+  { id: '3', name: 'Đánh giá', icon: 'star', iconSet: 'FontAwesome5', screen: 'Feedback', color: '#FFCA28' },
+  { id: '4', name: 'Điểm danh', icon: 'clipboard-check-outline', iconSet: 'MaterialCommunityIcons', screen: 'Attendance', color: '#66BB6A' },
+  { id: '5', name: 'Sức khỏe', icon: 'heartbeat', iconSet: 'FontAwesome5', screen: 'HealthProfile', color: '#EF5350' },
+  { id: '7', name: 'Người đưa đón', icon: 'people-circle', iconSet: 'Ionicons', screen: 'GuardianList', color: '#AB47BC' },
+  { id: '8', name: 'Học phí', icon: 'cash-multiple', iconSet: 'MaterialCommunityIcons', screen: 'Tuition', color: '#26C6DA' },
+  // { id: '6', name: 'Đăng xuất', icon: 'logout', iconSet: 'MaterialIcons', screen: 'Login', color: '#78909C' },
+  { id: '9', name: 'Album ảnh', icon: 'album', iconSet: 'MaterialIcons', screen: 'Post', color: '#78909C' },
 ];
 
-// Bảng màu chủ đạo
 const COLORS = {
-  primary: '#03A9F4',      // Light Blue
-  primaryDark: '#0288D1',  // Darker Blue
-  background: '#F0F8FF',   // AliceBlue
+  primary: '#03A9F4',      
+  primaryDark: '#0288D1',  
+  background: '#F0F8FF',   
   white: '#FFFFFF',
   textDark: '#263238',
   textLight: '#546E7A',
@@ -65,7 +64,6 @@ const HomeScreen: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
-  // Fetch current user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -73,44 +71,20 @@ const HomeScreen: React.FC = () => {
         if (getCurrentUser.fulfilled.match(resultAction)) {
           const currentUser: User = resultAction.payload;
           setUser(currentUser);
-          // Mặc định chọn bé đầu tiên
           if (currentUser.students && currentUser.students.length > 0) {
             setSelectedStudent(currentUser.students[0]);
           }
         }
       } catch (error) {
-        // Handle error silently or specific toast
       }
     };
 
     fetchUser();
   }, [dispatch]);
 
-  // Logout Handler
-  const handleLogout = () => {
-    Alert.alert(
-      "Đăng xuất",
-      "Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?",
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Đồng ý",
-          onPress: () => {
-            dispatch(logout());
-            navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-          }
-        }
-      ]
-    );
-  };
 
-  // Menu Press Handler
+
   const handleMenuItemPress = (item: MenuItem) => {
-    if (item.id === '6') {
-      handleLogout();
-      return;
-    }
-
     if (!selectedStudent) {
       Alert.alert('Chưa chọn học sinh', 'Vui lòng chọn học sinh để tiếp tục.');
       return;
@@ -121,10 +95,15 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  // Icon Renderer
+  // Mở màn hình Thông tin phụ huynh (ParentProfile)
+  const handleOpenProfile = () => {
+      // @ts-ignore - ParentProfile route đã được đăng ký trong AuthStack
+      navigation.navigate('ParentProfile');
+  };
+
   const renderIcon = (item: MenuItem) => {
     const size = 28;
-    const color = COLORS.white; // Icon màu trắng trên nền màu
+    const color = COLORS.white; 
 
     switch (item.iconSet) {
       case 'FontAwesome5':
@@ -151,9 +130,15 @@ const HomeScreen: React.FC = () => {
             <Text style={styles.greetingText}>Xin chào phụ huynh,</Text>
             <Text style={styles.userNameText}>{user?.fullName || 'Người dùng'}</Text>
           </View>
-          <View style={styles.avatarContainer}>
+          
+          {/* Avatar Button -> Chuyển đến ParentProfileScreen */}
+          <TouchableOpacity 
+            style={styles.avatarContainer} 
+            onPress={handleOpenProfile}
+            activeOpacity={0.8}
+          >
             <MaterialCommunityIcons name="account" size={30} color={COLORS.primary} />
-          </View>
+          </TouchableOpacity>
         </View>
         
         {/* Decoration Circles */}
@@ -163,7 +148,7 @@ const HomeScreen: React.FC = () => {
 
       <ScrollView 
         style={styles.scrollContainer} 
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
       >
         {/* --- STUDENT SELECTOR CARD --- */}
@@ -227,8 +212,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  
-  // Header Styles
   headerContainer: {
     backgroundColor: COLORS.primary,
     height: 160,
@@ -266,7 +249,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 5,
   },
-  // Decorative Circles in Header
   circle1: {
     position: 'absolute',
     top: -50,
@@ -285,14 +267,11 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: 'rgba(255,255,255,0.15)',
   },
-
   scrollContainer: {
     flex: 1,
-    marginTop: -30, // Pull up to overlap header
+    marginTop: -30, 
     zIndex: 2,
   },
-
-  // Student Card Styles
   studentCard: {
     backgroundColor: COLORS.white,
     marginHorizontal: 20,
@@ -317,7 +296,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   pickerWrapper: {
-    backgroundColor: '#E1F5FE', // Very light blue
+    backgroundColor: '#E1F5FE', 
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
@@ -333,8 +312,6 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     fontStyle: 'italic',
   },
-
-  // Menu Grid Styles
   menuTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -349,13 +326,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   menuItem: {
-    width: (width - 60) / 2, // 2 columns with spacing
+    width: (width - 60) / 2, 
     backgroundColor: COLORS.white,
     borderRadius: 20,
     paddingVertical: 20,
     alignItems: 'center',
     marginBottom: 20,
-    // Shadow
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -381,8 +357,6 @@ const styles = StyleSheet.create({
     color: COLORS.textDark,
     textAlign: 'center',
   },
-
-  // Footer Styles
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -396,6 +370,23 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: '600',
     marginRight: 5,
+  },
+  fabButton: {
+    position: 'absolute',
+    bottom: 25,
+    right: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#F06292', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: "#F06292",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    zIndex: 100,
   },
 });
 

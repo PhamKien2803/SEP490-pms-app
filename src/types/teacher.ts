@@ -226,7 +226,46 @@ export interface IAttendanceDetailResponse {
   takenAt: string;
 
 }
+export interface TeacherProfile {
+  _id: string;
+  staffCode: string;
+  fullName: string;
+  dob: string;
+  email: string;
+  IDCard: string;
+  gender: string;
+  phoneNumber: string;
+  address: string;
+  nation: string;
+  religion: string;
+  isTeacher: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
+export interface TeacherProfileResponse {
+  success: boolean;
+  data: TeacherProfile;
+}
+
+// Payload cập nhật thông tin
+export interface UpdateTeacherPayload {
+  fullName: string;
+  dob: string; // ISO Date string
+  IDCard: string;
+  gender: string;
+  phoneNumber: string;
+  address: string;
+  nation: string;
+  religion: string;
+}
+
+// Payload đổi mật khẩu
+export interface ChangeTeacherPasswordPayload {
+  oldPassword?: string;
+  newPassword: string;
+}
 
 
 export type IAttendanceListResponse = IAttendanceDetailResponse[];

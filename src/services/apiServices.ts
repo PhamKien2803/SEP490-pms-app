@@ -1,5 +1,5 @@
 import { AxiosError } from "axios";
-import { AttendanceResponse, ConfirmTuitionPayload, ConfirmTuitionResponse, FeedbackApiResponse, LoginRequest, LoginResponse, MedicalResponse, Menu, MonthlySchedule, StuParent, StuParents, User } from "../types/auth";
+import { AttendanceResponse, ChangePasswordPayload, ConfirmTuitionPayload, ConfirmTuitionResponse, FeedbackApiResponse, LoginRequest, LoginResponse, MedicalResponse, Menu, MonthlySchedule, StuParent, StuParents, UpdateParentPayload, User } from "../types/auth";
 import { apiEndPoint } from "./api";
 import axiosAuth from "./axiosAuth";
 import { messages } from "../constants/message";
@@ -10,6 +10,7 @@ import {
   PostsResponse,
 } from "../types/post";
 import {
+  ChangeTeacherPasswordPayload,
   IAttendanceCreatePayload,
   IAttendanceDetailResponse,
   IAttendanceUpdatePayload,
@@ -24,6 +25,9 @@ import {
   IScheduleWeekResponse,
   ITeacherClassStudentResponse,
   StudentDetailResponse,
+  TeacherProfile,
+  TeacherProfileResponse,
+  UpdateTeacherPayload,
 } from "../types/teacher";
 import {
   CreateSchoolYearDto,
@@ -129,6 +133,28 @@ export const userApis = {
   getTuitionByParent: async (parentId: any): Promise<any> => {
     const url = apiEndPoint.GET_TUITION_BY_PARENT(parentId);
     const response = await axiosAuth.get(url);
+    return response.data;
+  },
+  getParentInfo: async (parentId: any): Promise<any> => {
+    const url = apiEndPoint.GET_INFOR_PARENT(parentId);
+    const response = await axiosAuth.get(url);
+    return response.data;
+  },
+  getPostsByStudent: async (studentId: any): Promise<any> => {
+    const url = apiEndPoint.GET_POST_BY_STUDENT(studentId);
+    const response = await axiosAuth.get(url);
+    return response.data;
+  },
+  updateParent: async (parentId: string, payload: UpdateParentPayload): Promise<any> => {
+    const url = apiEndPoint.UPDATE_INFOR_PARENT(parentId);
+    const response = await axiosAuth.put(url, payload);
+    return response.data;
+  },
+  changeParentPassword: async (parentId: string, payload: ChangePasswordPayload): Promise<any> => {
+    console.log("🚀 HieuDD ×͜× ~ payload:", payload)
+    const url = apiEndPoint.CHANGE_PASS_PARENT(parentId);
+    const response = await axiosAuth.put(url, payload);
+    console.log("🚀 HieuDD ×͜× ~ response:", response)
     return response.data;
   },
   confirmTuition: async (
@@ -252,6 +278,24 @@ export const teacherApis = {
       apiEndPoint.GET_SCHOOLYEARS_LIST,
       { params }
     );
+    return response.data;
+  },
+
+  getTeacherInfo: async (teacherId: any): Promise<any> => {
+    const url = apiEndPoint.GET_TEACHER_INFO(teacherId);
+    const response = await axiosAuth.get<TeacherProfileResponse>(url);
+    return response.data;
+  },
+
+  updateTeacher: async (teacherId: string, payload: UpdateTeacherPayload): Promise<any> => {
+    const url = apiEndPoint.UPDATE_TEACHER_INFO(teacherId);
+    const response = await axiosAuth.put(url, payload);
+    return response.data;
+  },
+
+  changeTeacherPassword: async (teacherId: string, payload: ChangeTeacherPasswordPayload): Promise<any> => {
+    const url = apiEndPoint.CHANGE_PASS_TEACHER(teacherId);
+    const response = await axiosAuth.put(url, payload);
     return response.data;
   },
 

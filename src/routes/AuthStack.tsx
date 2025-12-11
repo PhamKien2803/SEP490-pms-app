@@ -13,6 +13,8 @@ import GuardianListScreen from '../screens/parent-dashboard/screen/GuardianListS
 import PaymentWebViewScreen from '../screens/parent-dashboard/screen/PaymentWebViewScreen';
 import Tuition from '../screens/parent-dashboard/screen/TuitionScreen';
 import GuardianScreen from '../screens/parent-dashboard/screen/GuardianScreen';
+import ParentProfileScreen from '../screens/parent-dashboard/screen/ParentProfileScreen';
+import PostScreen from '../screens/parent-dashboard/screen/PostScreen';
 
 const Stack = createStackNavigator<AuthStackParamList>();
 
@@ -28,6 +30,8 @@ export type AuthStackParamList = {
   PaymentWebView: { url: string };
   Guardian: { student: Student };
   Tuition: { student: Student };
+  ParentProfileScreen: { student: Student };
+  PostScreen: { student: Student }; 
 };
 
 const AuthStack: React.FC = () => {
@@ -46,7 +50,9 @@ const AuthStack: React.FC = () => {
       <Stack.Screen name="HealthProfile" component={HealthProfileScreen} />
       <Stack.Screen name="GuardianList" component={GuardianListScreen} />
       <Stack.Screen name="Guardian" component={GuardianScreen} />
+      <Stack.Screen name="ParentProfile" component={ParentProfileScreen} />
       <Stack.Screen name="Tuition" component={Tuition} />
+      <Stack.Screen name="Post" component={PostScreen} />
       <Stack.Screen 
         name="PaymentWebView" 
         component={PaymentWebViewScreen} 

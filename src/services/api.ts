@@ -1,6 +1,7 @@
 export const apiConfig = {
   // baseURL: import.meta.env.VITE_API_URL_PROD || "https://kingdergarten-api-gmena8b7cug2f4cr.southeastasia-01.azurewebsites.net/api/pms/",
   baseURL: "https://overly-ectodermoidal-brunilda.ngrok-free.dev/api/pms/",
+  // baseURL: "http://localhost:9999/api/pms/",
 };
 
 export const apiEndPoint = {
@@ -105,6 +106,10 @@ export const apiEndPoint = {
   UPDATE_ATTENDANCE: (id: string) => `/attendances/update/${id}`,
   DELETE_ATTENDANCE: (id: string) => `/attendances/delete/${id}`,
   GET_ATTENDANCE_BY_ID: (id: string) => `/attendances/getById/${id}`,
+  GET_TEACHER_INFO: (id: string) => `/accounts/getInforTeacher/${id}`,
+  UPDATE_TEACHER_INFO: (id: string) => `/accounts/updateInforTeacher/${id}`,
+  CHANGE_PASS_TEACHER: (id: string) => `/accounts/changePasswordTeacher/${id}`,
+
   GET_ATTENDANCE_BY_CLASS_AND_SCHOOLYEAR: (
     classId: string,
     schoolYearId: string
@@ -166,6 +171,14 @@ export const apiEndPoint = {
   DELETE_MEDICAL: (id: string) => `/medicals/delete/${id}`,
   GET_LIST_PARENT_STUDENT: (id: string) =>
     `/dashboard-parent/getStudentByParent/${id}`,
+  GET_INFOR_PARENT: (id: string) =>
+    `/dashboard-parent/getInforParent/${id}`,
+  CHANGE_PASS_PARENT: (id: string) =>
+    `/dashboard-parent/changePassParent/${id}`,
+  UPDATE_INFOR_PARENT: (id: string) =>
+    `/dashboard-parent/updateParent/${id}`,
+  GET_POST_BY_STUDENT: (id: string) =>
+    `/dashboard-posts/getPostFileByStudent/${id}`,
   GET_DASHBOARD_SCHEDULE: "/dashboard-schedules/getSchedulesByClassAndMonth",
   GET_DASHBOARD_CLASS: "/dashboard-class/getClassByStuAndSY",
   GET_LIST_FEEDBACK: "/dashboard-feedbacks/getFbByStuAndDate",
