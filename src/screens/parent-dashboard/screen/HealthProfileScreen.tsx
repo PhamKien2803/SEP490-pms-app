@@ -207,11 +207,11 @@ const HealthProfileScreen: React.FC<Props> = ({ route, navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.titleContainer}>
-          <MaterialCommunityIcons
+          {/* <MaterialCommunityIcons
             name="heart-pulse"
             size={30}
             color={COLORS.primaryDark}
-          />
+          /> */}
           <Text style={styles.title}>Hồ sơ sức khỏe</Text>
         </View>
 
@@ -404,7 +404,7 @@ const COLORS = {
   background: "#f0f8ff", // AliceBlue
   white: "#FFFFFF",
   primary: "#00796B", // Màu Teal đậm
-  primaryDark: "#004D40", // Màu tiêu đề chính
+  primaryDark: "#0077b6", // Màu tiêu đề chính
   lightBlue: "#81D4FA", // Màu xanh da trời sáng
   textPrimary: "#333333",
   textSecondary: "#555555",

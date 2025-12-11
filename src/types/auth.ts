@@ -357,6 +357,93 @@ export interface ConfirmTuitionPayload {
     totalAmount: number;
 }
 
+export interface PostFile {
+  _id: string;
+  fileUrl: string;
+  fileType: 'image' | 'video';
+  fileSize: number;
+  cloudinaryPublicId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeacherShort {
+  _id: string;
+  staffCode: string;
+  fullName: string;
+  email: string;
+}
+
+export interface PostClassInfo {
+  _id: string;
+  classCode: string;
+  className: string;
+  age: string;
+}
+
+export interface Post {
+  postId: string;
+  title: string;
+  content: string;
+  teacher: TeacherShort;
+  class: PostClassInfo;
+  files: PostFile[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PostResponse {
+  count: number;
+  studentId: string;
+  class: any; // Thông tin lớp chi tiết (nếu cần dùng)
+  posts: Post[];
+}
+
+export interface ChangePasswordPayload {
+  newPassword: string;
+  oldPassword: string;
+}
+export interface UpdateParentPayload {
+  job: string;
+  IDCard: string;
+  phoneNumber: string;
+}
+export interface Student {
+  _id: string;
+  studentCode: string;
+  fullName: string;
+  dob: string;
+  idCard?: string;
+  gender: string;
+  address?: string;
+  nation?: string;
+  religion?: string;
+  birthCertId?: string;
+  healthCertId?: string;
+  imageStudent?: string;
+  active: boolean;
+}
+
+export interface ParentProfile {
+  _id: string;
+  parentCode: string;
+  fullName: string;
+  phoneNumber: string;
+  email: string;
+  IDCard: string;
+  gender: string;
+  job?: string;
+  students: Student[];
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ParentProfileResponse {
+  success: boolean;
+  data: ParentProfile;
+}
+
 export interface ConfirmTuitionResponse {
     success: boolean;
     message: string;
