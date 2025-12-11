@@ -34,6 +34,8 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Schedule">;
 const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
   const { student } = route.params;
   const classId = "691757179b7ad0c9496f4372"; // Thay bằng student.class?._id nếu có
+  // dkmmmmmmmmm hard code sửa con mẹ m đi
+  
 
   const [loading, setLoading] = useState(false);
   const [monthOptions, setMonthOptions] = useState<{ label: string; value: number }[]>([]);

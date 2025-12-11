@@ -1,9 +1,18 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+  FlatList,
+  ActivityIndicator,
+} from "react-native";
 import { Card as RNECard, Icon, Button, Image } from "react-native-elements";
 import RNModal from "react-native-modal";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import "dayjs/locale/vi";
 import {
   Menu,
   MenuTrigger,
@@ -12,8 +21,11 @@ import {
 } from "react-native-popup-menu";
 import Video from "react-native-video";
 import Toast from "react-native-toast-message";
+import ImageViewing from "react-native-image-viewing";
+
 import { Post } from "../../../../../types/post";
 import { usePagePermission } from "../../../../../hooks/usePagePermission";
+import { postApis } from "../../../../../services/apiServices";
 
 dayjs.extend(relativeTime);
 dayjs.locale("vi");
@@ -25,64 +37,38 @@ interface PostItemProps {
 }
 
 const Card = RNECard as any;
+const { width } = Dimensions.get("window");
 
 const PostItem: React.FC<PostItemProps> = ({
   post,
   onEdit,
   onDeleteSuccess,
 }) => {
-  const timeAgo = dayjs(post?.createdAt).fromNow();
+  const timeAgo = dayjs(post?.createdAt).locale("vi").fromNow();
   const detailedDate = dayjs(post?.createdAt).format("HH:mm, DD/MM/YYYY");
+
   const [isShowConfirmDelete, setIsShowConfirmDelete] = useState(false);
-  const { canUpdate } = usePagePermission();
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+  const [previewInitialIndex, setPreviewInitialIndex] = useState(0);
+
+  const [isContentExpanded, setIsContentExpanded] = useState(false);
+  const MAX_LINES = 3;
 
   const mediaFiles = post.files.filter(
     (f) => f.fileType === "image" || f.fileType === "video"
   );
 
-  const getMediaComponent = (file: any, index: number) => {
-    const isImage = file.fileType === "image";
-    const mediaHeight = 300;
-
-    return (
-      <View key={index} style={styles.mediaContainer}>
-        {isImage ? (
-          <Image
-            source={{ uri: file.fileUrl }}
-            style={{ width: "100%", height: mediaHeight, resizeMode: "cover" }}
-            PlaceholderContent={
-              <Icon name="image" type="font-awesome" color="#999" />
-            }
-          />
-        ) : (
-          <View style={{ height: mediaHeight, backgroundColor: "#000" }}>
-            <Video
-              source={{ uri: file.fileUrl }}
-              style={styles.videoStyle}
-              controls={true}
-              resizeMode="contain"
-            />
-            <View style={styles.videoTag}>
-              <Icon
-                name="video-camera"
-                type="font-awesome"
-                color="#fff"
-                size={12}
-              />
-              <Text style={styles.videoTagText}>Video</Text>
-            </View>
-          </View>
-        )}
-      </View>
-    );
-  };
+  const previewImages = mediaFiles
+    .filter((f) => f.fileType === "image")
+    .map((f) => ({ uri: f.fileUrl }));
 
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
     setIsShowConfirmDelete(false);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await postApis.deletePost(post?.postId);
       Toast.show({
         type: "success",
         text1: "Xóa bài viết thành công!",
@@ -129,6 +115,70 @@ const PostItem: React.FC<PostItemProps> = ({
     </MenuOptions>
   );
 
+  const renderMediaItem = ({ item, index }: { item: any; index: number }) => {
+    const isImage = item.fileType === "image";
+    const mediaWidth = width - 32;
+    const mediaHeight = 300;
+
+    const imageIndexInPreview = previewImages.findIndex(
+      (img) => img.uri === item.fileUrl
+    );
+
+    return (
+      <View
+        key={index}
+        style={[
+          styles.mediaContainer,
+          { width: mediaWidth, height: mediaHeight },
+        ]}
+      >
+        {isImage ? (
+          <TouchableOpacity
+            onPress={() => {
+              if (imageIndexInPreview !== -1) {
+                setPreviewInitialIndex(imageIndexInPreview);
+                setIsPreviewVisible(true);
+              }
+            }}
+          >
+            <Image
+              source={{ uri: item.fileUrl }}
+              style={{
+                width: mediaWidth,
+                height: mediaHeight,
+                resizeMode: "cover",
+              }}
+              PlaceholderContent={<ActivityIndicator color="#999" />}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ height: mediaHeight, backgroundColor: "#000" }}>
+            <Video
+              source={{ uri: item.fileUrl }}
+              style={styles.videoStyle}
+              controls={true}
+              resizeMode="contain"
+              paused={true}
+            />
+            <View style={styles.videoTag}>
+              <Icon
+                name="video-camera"
+                type="font-awesome"
+                color="#fff"
+                size={12}
+                style={{ marginRight: 5 }}
+              />
+              <Text style={styles.videoTagText}>Video</Text>
+            </View>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const isContentLong =
+    post.content.split("\n").length > MAX_LINES || post.content.length > 200;
+
   return (
     <Card containerStyle={styles.cardContainer}>
       <View style={styles.header}>
@@ -152,40 +202,70 @@ const PostItem: React.FC<PostItemProps> = ({
             </Text>
           </View>
         </View>
-        {canUpdate && (
-          <Menu>
-            <MenuTrigger>
-              <Icon
-                name="ellipsis-v"
-                type="font-awesome"
-                size={20}
-                color="#666"
-              />
-            </MenuTrigger>
-            {menuItems}
-          </Menu>
-        )}
+        <Menu>
+          <MenuTrigger
+            customStyles={{
+              triggerWrapper: styles.menuTriggerWrapper,
+            }}
+          >
+            <Icon
+              name="ellipsis-v"
+              type="font-awesome"
+              size={20}
+              color="#666"
+            />
+          </MenuTrigger>
+          {menuItems}
+        </Menu>
       </View>
 
       <Text style={styles.title}>{post.title}</Text>
-      <Text style={styles.content} numberOfLines={3}>
+
+      <Text
+        style={styles.content}
+        numberOfLines={isContentExpanded ? undefined : MAX_LINES}
+      >
         {post.content}
       </Text>
 
+      {isContentLong && (
+        <TouchableOpacity
+          onPress={() => setIsContentExpanded(!isContentExpanded)}
+          style={styles.readMoreButton}
+        >
+          <Text style={styles.readMoreText}>
+            {isContentExpanded ? "Thu gọn" : "Xem thêm"}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       {mediaFiles?.length > 0 && (
         <View style={styles.mediaGallery}>
-          {mediaFiles?.length === 1 ? (
-            getMediaComponent(mediaFiles[0], 0)
-          ) : (
-            <View style={{ height: 300 }}>
-              {getMediaComponent(mediaFiles[0], 0)}
-              <Text style={styles.carouselIndicator}>
-                +{mediaFiles?.length - 1} media khác
-              </Text>
-            </View>
+          <FlatList
+            data={mediaFiles}
+            renderItem={renderMediaItem}
+            keyExtractor={(item) => item.fileUrl}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ width: mediaFiles.length * (width - 32) }}
+            snapToInterval={width - 32}
+            decelerationRate="fast"
+          />
+          {mediaFiles.length > 1 && (
+            <Text style={styles.carouselIndicatorText}>
+              {mediaFiles.length} files
+            </Text>
           )}
         </View>
       )}
+
+      <ImageViewing
+        images={previewImages}
+        imageIndex={previewInitialIndex}
+        visible={isPreviewVisible}
+        onRequestClose={() => setIsPreviewVisible(false)}
+      />
 
       <RNModal
         isVisible={isShowConfirmDelete}
@@ -241,6 +321,12 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 0,
   },
+  menuTriggerWrapper: {
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    marginRight: -10,
+    marginTop: -10,
+  },
   teacherName: {
     fontWeight: "bold",
     fontSize: 16,
@@ -279,14 +365,23 @@ const styles = StyleSheet.create({
     color: "#454545",
     paddingHorizontal: 16,
     lineHeight: 20,
+    marginBottom: 8,
+  },
+  readMoreButton: {
+    paddingHorizontal: 16,
     marginBottom: 16,
+    marginTop: 0,
+  },
+  readMoreText: {
+    color: "#1890ff",
+    fontWeight: "600",
+    fontSize: 14,
   },
   mediaGallery: {
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
   },
   mediaContainer: {
-    width: "100%",
     height: 300,
     backgroundColor: "#000",
   },
@@ -312,7 +407,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 5,
   },
-  carouselIndicator: {
+  carouselIndicatorText: {
     position: "absolute",
     bottom: 10,
     right: 10,
@@ -322,6 +417,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 5,
     fontSize: 12,
+    zIndex: 1,
   },
   modalContent: {
     backgroundColor: "white",

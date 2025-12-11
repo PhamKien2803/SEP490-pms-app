@@ -6,17 +6,27 @@ import {
   ActivityIndicator,
   Text,
   Dimensions,
-  TouchableOpacity, // Import TouchableOpacity để dùng cho nút đóng Modal
+  TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { Button, Icon } from "react-native-elements";
-import RNModal from "react-native-modal";
+import { StackScreenProps } from "@react-navigation/stack";
 import { Post } from "../../../types/post";
-import { usePagePermission } from "../../../hooks/usePagePermission";
-import EditPost from "./update-post/UpdatePost";
 import PostItem from "./components/post-item/PostItem";
-import CreatePost from "./create-post/CreatePost";
+import { useNavigation } from "@react-navigation/native";
 
-interface ListPostProps {
+type RootStackParamList = {
+  ListPostScreen: undefined;
+  CreatePostScreen: { onPostSuccess: () => void };
+  EditPostScreen: { post: Post; onEditSuccess: () => void };
+};
+
+type ListPostScreenProps = StackScreenProps<
+  RootStackParamList,
+  "ListPostScreen"
+>;
+
+interface ListPostProps extends ListPostScreenProps {
   dataPosts: Post[];
   fetchApi: () => void;
   loading: boolean;
@@ -26,51 +36,46 @@ const { width } = Dimensions.get("window");
 
 const ListPostScreen: React.FC<ListPostProps> = (props) => {
   const { dataPosts, loading, fetchApi } = props;
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const { canCreate } = usePagePermission(); // Giữ nguyên usePagePermission
+  const navigation = useNavigation<any>();
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handlePostCreated = () => {
-    setIsModalVisible(false);
     fetchApi();
   };
 
   const handleEditPost = (postToEdit: Post) => {
-    setEditingPost(postToEdit);
+    navigation.navigate("EditPost", {
+      post: postToEdit,
+      onEditSuccess: fetchApi,
+    });
   };
 
-  const handleEditCompleted = () => {
-    setEditingPost(null);
-    fetchApi();
+  const handleNavigateToCreatePost = () => {
+    navigation.navigate("CreatePost", {
+      onPostSuccess: handlePostCreated,
+    });
   };
 
-  const showModal = () => {
-    setIsModalVisible(true);
-  };
+  const onRefresh = async () => {
+    setIsRefreshing(true);
 
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
+    await fetchApi();
 
-  if (editingPost) {
-    return (
-      <EditPost
-        post={editingPost}
-        onEditSuccess={handleEditCompleted}
-        onCancel={handleEditCompleted}
-      />
-    );
-  }
+    setIsRefreshing(false);
+  };
 
   const renderListHeader = () => (
     <View>
-      {/* {canCreate && ( */}
       <View style={styles.createPostCard}>
         <View style={styles.createPostRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>GV</Text>
           </View>
-          <TouchableOpacity style={styles.createPostButton} onPress={showModal}>
+          <TouchableOpacity
+            style={styles.createPostButton}
+            onPress={handleNavigateToCreatePost}
+          >
             <Text>Bạn muốn chia sẻ điều gì hôm nay?</Text>
           </TouchableOpacity>
         </View>
@@ -86,7 +91,7 @@ const ListPostScreen: React.FC<ListPostProps> = (props) => {
             type="clear"
             titleStyle={styles.optionButtonTitle}
             buttonStyle={styles.optionButton}
-            onPress={showModal}
+            onPress={handleNavigateToCreatePost}
           />
 
           <Button
@@ -97,16 +102,15 @@ const ListPostScreen: React.FC<ListPostProps> = (props) => {
             type="clear"
             titleStyle={styles.optionButtonTitle}
             buttonStyle={styles.optionButton}
-            onPress={showModal}
+            onPress={handleNavigateToCreatePost}
           />
         </View>
       </View>
-      {/* )} */}
     </View>
   );
 
   const renderListEmpty = () => {
-    if (loading) {
+    if (loading && !isRefreshing) {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#1890ff" />
@@ -114,7 +118,7 @@ const ListPostScreen: React.FC<ListPostProps> = (props) => {
         </View>
       );
     }
-    if (dataPosts?.length === 0) {
+    if (!loading && dataPosts?.length === 0) {
       return (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyText}>Chưa có bài viết nào được đăng.</Text>
@@ -140,27 +144,15 @@ const ListPostScreen: React.FC<ListPostProps> = (props) => {
         ListEmptyComponent={renderListEmpty}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-      />
-
-      <RNModal
-        isVisible={isModalVisible}
-        onBackdropPress={handleCancel}
-        style={styles.modal}
-        propagateSwipe={true}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Tạo Bài Viết Mới</Text>
-            <TouchableOpacity onPress={handleCancel} style={styles.closeButton}>
-              <Icon name="close" type="antdesign" size={24} color="#555" />
-            </TouchableOpacity>
-          </View>
-          <CreatePost
-            onPostSuccess={handlePostCreated}
-            onCancel={handleCancel}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            colors={["#1890ff"]}
+            tintColor={"#1890ff"}
           />
-        </View>
-      </RNModal>
+        }
+      />
     </View>
   );
 };
@@ -171,7 +163,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f2f5",
     paddingHorizontal: width * 0.05,
   },
-  // ... (Giữ nguyên styles cho ListHeaderComponent và ListEmptyComponent)
   createPostCard: {
     marginHorizontal: 0,
     marginTop: 16,
@@ -210,12 +201,6 @@ const styles = StyleSheet.create({
     borderColor: "#e0e0e0",
     paddingLeft: 20,
     justifyContent: "center",
-  },
-  createPostButtonTitle: {
-    color: "#606060",
-    fontWeight: "normal",
-    textAlign: "left",
-    flex: 1,
   },
   contentDivider: {
     height: 1,
@@ -269,40 +254,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 24,
-  },
-  // STYLES MỚI CHO MODAL
-  modal: {
-    margin: 0,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContainer: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    maxHeight: Dimensions.get("window").height * 0.9, // Chiều cao tối đa 90% màn hình
-    overflow: "hidden",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  closeButton: {
-    padding: 5,
-  },
-  modalContentWrapper: {
-    // flex: 1,
-    backgroundColor: "red",
   },
 });
 

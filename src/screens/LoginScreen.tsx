@@ -57,8 +57,8 @@ const LoginScreen: React.FC = () => {
       const profile = await dispatch(getCurrentUser()).unwrap();
       dispatch(setToken(response));
       dispatch(setUserProfile(profile));
-    } catch (err) {
-      // Error handled by slice
+    } catch (err: any) {
+      Alert.alert(err);
     }
   };
 

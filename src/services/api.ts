@@ -1,7 +1,8 @@
 export const apiConfig = {
   // baseURL: import.meta.env.VITE_API_URL_PROD || "https://kingdergarten-api-gmena8b7cug2f4cr.southeastasia-01.azurewebsites.net/api/pms/",
-  baseURL: "https://overly-ectodermoidal-brunilda.ngrok-free.dev/api/pms/",
-  // baseURL: "http://localhost:9999/api/pms/",
+  // baseURL: "https://overly-ectodermoidal-brunilda.ngrok-free.dev/api/pms/",
+  baseURL: "https://kingdergarten-api-gmena8b7cug2f4cr.southeastasia-01.azurewebsites.net/api/pms",
+
 };
 
 export const apiEndPoint = {
@@ -23,7 +24,7 @@ export const apiEndPoint = {
   GET_LIST_POST: (teacherId: string) =>
     `/posts/getPostFileByTeacher/${teacherId}`,
   DELETE_POST: (postId: string) => `/posts/delete/${postId}`,
-  DELETE_IMAGE: (imageId: string) => `/post-files/${imageId}/delete`,
+  DELETE_IMAGE: (imageId: string) => `/posts/${imageId}/delete`,
   UPDATE_POST: (postId: string) => `/posts/update/${postId}`,
   GET_LIST_POST_BY_STUDENT: (studentId: string) =>
     `/dashboard-posts/getPostFileByStudent/${studentId}`,
@@ -200,6 +201,5 @@ export const apiEndPoint = {
     `/guardians/listByStudent/${studentId}`,
   GET_LIST_GUARDIAN_BY_PARENT: (parentId: string) =>
     `/guardians/listByParent/${parentId}`,
-  GET_TUITION_BY_PARENT: (parentId: string) =>
-    `/tuitions/detail/${parentId}`,
+  GET_TUITION_BY_PARENT: (parentId: string) => `/tuitions/detail/${parentId}`,
 };

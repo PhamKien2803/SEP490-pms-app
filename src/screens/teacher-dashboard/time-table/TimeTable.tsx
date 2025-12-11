@@ -321,7 +321,7 @@ const TimeTable = () => {
       } catch (err) {
         console.error(err);
         setTimetableData(null);
-        Alert.alert("Lỗi", "Không thể tải thời khóa biểu.");
+        // Alert.alert("Lỗi", "Không thể tải thời khóa biểu.");
       } finally {
         setLoading(false);
       }
