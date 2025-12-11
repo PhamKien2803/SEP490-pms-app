@@ -13,8 +13,7 @@ import {
 import { Button, Icon } from "react-native-elements";
 import Toast from "react-native-toast-message";
 import * as ImagePicker from "expo-image-picker";
-
-// Import các hooks và types của bạn (giả định các đường dẫn này là chính xác)
+import { StackScreenProps } from "@react-navigation/stack";
 import { useCurrentUser } from "../../../../hooks/useCurrentUser";
 import { postApis } from "../../../../services/apiServices";
 import { CreatePostParams } from "../../../../types/post";
@@ -22,23 +21,34 @@ import { CreatePostParams } from "../../../../types/post";
 const MAX_PHOTOS = 10;
 const { width } = Dimensions.get("window");
 
-interface CreatePostProps {
-  onPostSuccess: () => void;
-  onCancel: () => void;
-}
+type RootStackParamList = {
+  ListPostScreen: undefined;
+  CreatePostScreen: { onPostSuccess: () => void };
+};
 
-interface RNFile {
+type CreatePostScreenProps = StackScreenProps<
+  RootStackParamList,
+  "CreatePostScreen"
+>;
+
+export interface RNFile {
   uri: string;
   name: string;
-  type: string; // Ví dụ: 'image/jpeg', 'video/mp4'
+  type: string;
 }
 
-const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
+const CreatePost: React.FC<CreatePostScreenProps> = ({ navigation, route }) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [fileList, setFileList] = useState<RNFile[]>([]);
+  const [fileList, setFileList] = useState<RNFile[]>([] as RNFile[]);
   const user = useCurrentUser();
+
+  const onPostSuccessCallback = route.params?.onPostSuccess;
+
+  const handleCancel = () => {
+    navigation.goBack();
+  };
 
   const handlePickFiles = async () => {
     const availableSlots = MAX_PHOTOS - fileList.length;
@@ -69,23 +79,18 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
       return;
     }
 
-    // 2. CHỌN ẢNH TỪ THƯ VIỆN
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
       selectionLimit: availableSlots,
       quality: 0.8,
     });
-    console.log("result=====", result);
+
     if (!result.canceled && result.assets) {
       const newFiles: RNFile[] = result.assets
-        .map((asset) => {
-          const assetAny = asset as any; // Sử dụng Type Assertion để xử lý kiểu dữ liệu
-
-          // Xác định loại file/mimeType
+        .map((asset: any) => {
           const isVideo =
-            assetAny.mediaType === "video" ||
-            asset.mimeType?.startsWith("video/");
+            asset.mediaType === "video" || asset.mimeType?.startsWith("video/");
 
           const fileExtension =
             asset.uri.split(".").pop() || (isVideo ? "mp4" : "jpeg");
@@ -103,19 +108,14 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
         })
         .filter((file) => file.uri !== "");
 
-      console.log("newFiles", newFiles);
-
       setFileList((prev) => [...prev, ...newFiles]);
 
       Toast.show({
         type: "success",
         text1: `Đã thêm ${newFiles.length} file vào danh sách.`,
       });
-      // LOG ĐỂ KIỂM TRA LẦN CUỐI
-      console.log("Danh sách File sau khi chọn:", [...fileList, ...newFiles]);
     }
   };
-  // ---------------------------------------------------------------------
 
   const handleRemoveFile = (indexToRemove: number) => {
     setFileList((prev) => prev.filter((_, index) => index !== indexToRemove));
@@ -140,7 +140,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
     setIsLoading(true);
 
     try {
-      // Logic gọi API tạo post và upload album (giữ nguyên)
       const classResponse = await postApis.getClass(user.staff);
       const classId = classResponse?.classes?._id;
 
@@ -168,7 +167,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
         const formData = new FormData();
         formData.append("postId", postId);
         filesToUpload.forEach((file) => {
-          // Lưu ý: React Native yêu cầu định dạng `name`, `uri`, `type`
           formData.append("album", {
             uri: file.uri,
             name: file.name,
@@ -192,7 +190,12 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
       setTitle("");
       setContent("");
       setFileList([]);
-      onPostSuccess();
+
+      if (onPostSuccessCallback) {
+        onPostSuccessCallback();
+      }
+
+      navigation.goBack();
     } catch (error: any) {
       const errorMessage = error?.message || "Đã xảy ra lỗi. Vui lòng thử lại.";
       Toast.show({ type: "error", text1: errorMessage });
@@ -232,7 +235,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
           {fileList.map((file, index) => (
             <View key={index} style={styles.fileItem}>
               {file.type.startsWith("video/") ? (
-                // Nếu là video, hiển thị icon
                 <View style={styles.videoThumbnailContainer}>
                   <Icon
                     name="video-camera"
@@ -243,7 +245,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
                   <Text style={styles.videoText}>Video</Text>
                 </View>
               ) : (
-                // Nếu là ảnh, hiển thị ảnh
                 <Image
                   source={{ uri: file.uri }}
                   style={styles.fileThumbnail}
@@ -260,6 +261,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
                   type="font-awesome"
                   size={20}
                   color="red"
+                  containerStyle={styles.removeIconContainer}
                 />
               </TouchableOpacity>
             </View>
@@ -287,7 +289,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostSuccess, onCancel }) => {
         />
         <Button
           title="Hủy"
-          onPress={onCancel}
+          onPress={handleCancel}
           disabled={isLoading}
           type="outline"
           buttonStyle={styles.cancelButton}
@@ -342,18 +344,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#d9d9d9",
-    // Giữ nguyên: justifyContent: "center", alignItems: "center",
     marginRight: 10,
     marginBottom: 10,
     position: "relative",
     backgroundColor: "#f0f0f0",
-    overflow: "hidden",
+    overflow: "visible",
   },
   fileThumbnail: {
     width: "100%",
     height: "100%",
     borderRadius: 8,
-    // FIX: THÊM resizeMode ĐỂ ĐẢM BẢO ẢNH HIỂN THỊ TRONG KHUNG 80x80
     resizeMode: "cover",
   },
   videoThumbnailContainer: {
@@ -372,11 +372,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -8,
     right: -8,
+    zIndex: 10,
+  },
+  removeIconContainer: {
     backgroundColor: "white",
     borderRadius: 15,
-    zIndex: 10,
+    padding: 2,
     borderWidth: 1,
-    borderColor: "#fff",
+    borderColor: "#ddd",
+    opacity: 1,
   },
   uploadButtonPlaceholder: {
     width: 80,
