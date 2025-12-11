@@ -59,7 +59,7 @@ if (!user?.isTeacher) {
           ),
         }}
       />
-      <Tab.Screen
+      {/* <Tab.Screen
         name="ListConversation"
         component={ConversationStack}
         options={{
@@ -68,7 +68,7 @@ if (!user?.isTeacher) {
             <Ionicons name="chatbubbles" color={color} size={size} />
           ),
         }}
-      />
+      /> */}
       <Tab.Screen
         name="Setting"
         component={SettingStack}

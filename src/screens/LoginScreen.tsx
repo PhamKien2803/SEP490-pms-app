@@ -52,8 +52,8 @@ const LoginScreen: React.FC = () => {
       const profile = await dispatch(getCurrentUser()).unwrap();
       dispatch(setToken(response));
       dispatch(setUserProfile(profile));
-    } catch (err) {
-      // Lỗi đã được xử lý bởi slice (loginError), không cần console.log
+    } catch (err: any) {
+      Alert.alert(err);
     }
   };
 

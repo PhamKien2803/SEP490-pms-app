@@ -63,7 +63,7 @@ const AttendanceHistory = () => {
         if (!currentClass) {
           setTeacherClassInfo(null);
           setAttendanceList([]);
-          Alert.alert("Cảnh báo", "Không tìm thấy lớp học trong năm học này");
+          // Alert.alert("Cảnh báo", "Không tìm thấy lớp học trong năm học này");
           return;
         }
 
