@@ -10,6 +10,8 @@ import PaymentWebViewScreen from '../screens/parent-dashboard/screen/PaymentWebV
 import Tuition from "../screens/parent-dashboard/screen/TuitionScreen";
 import HomeScreen from "../screens/HomeScreen";
 import GuardianScreen from "../screens/parent-dashboard/screen/GuardianScreen";
+import ParentProfileScreen from '../screens/parent-dashboard/screen/ParentProfileScreen';
+import PostScreen from '../screens/parent-dashboard/screen/PostScreen';
 
 export type InformationStackParamList = {
   Home: { student: any };
@@ -22,6 +24,8 @@ export type InformationStackParamList = {
   PaymentWebView: { url: string };
   Guardian: { student: any };
   Tuition: { student: any };
+  ParentProfile: { student: any };
+  Post: { student: any };
 };
 
 const Stack = createNativeStackNavigator<InformationStackParamList>();
@@ -37,7 +41,9 @@ const InformationStack = () => {
       <Stack.Screen name="HealthProfile" component={HealthProfileScreen} />
       <Stack.Screen name="GuardianList" component={GuardianListScreen} />
       <Stack.Screen name="Guardian" component={GuardianScreen} />
+      <Stack.Screen name="ParentProfile" component={ParentProfileScreen} />
       <Stack.Screen name="Tuition" component={Tuition} />
+      <Stack.Screen name="Post" component={PostScreen} />
       <Stack.Screen 
         name="PaymentWebView" 
         component={PaymentWebViewScreen} 

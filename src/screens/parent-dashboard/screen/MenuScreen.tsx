@@ -152,11 +152,11 @@ const MenuScreen: React.FC<Props> = ({ route, navigation }) => {
         
         {/* Header Title */}
         <View style={styles.titleContainer}>
-          <MaterialCommunityIcons
+          {/* <MaterialCommunityIcons
             name="silverware-variant"
             size={30}
             color={COLORS.primaryDark}
-          />
+          /> */}
           <Text style={styles.title}>Thực đơn tuần</Text>
         </View>
 
@@ -202,11 +202,11 @@ const MenuScreen: React.FC<Props> = ({ route, navigation }) => {
                       <Text style={styles.mealTitle}>{meal.mealType}</Text>
                       {meal.foods.map(({ food }) => (
                         <View key={food._id} style={styles.foodItemContainer}>
-                          <MaterialCommunityIcons
+                          {/* <MaterialCommunityIcons
                             name="food-apple-outline"
                             size={20}
                             color={COLORS.accent}
-                          />
+                          /> */}
                           <Text style={styles.foodText}>
                             {food.foodName}
                             <Text style={styles.caloriesText}> ({food.totalCalories} cal)</Text>
