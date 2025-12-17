@@ -107,10 +107,11 @@ export const apiEndPoint = {
   UPDATE_ATTENDANCE: (id: string) => `/attendances/update/${id}`,
   DELETE_ATTENDANCE: (id: string) => `/attendances/delete/${id}`,
   GET_ATTENDANCE_BY_ID: (id: string) => `/attendances/getById/${id}`,
-  GET_TEACHER_INFO: (id: string) => `/accounts/getInforTeacher/${id}`,
-  UPDATE_TEACHER_INFO: (id: string) => `/accounts/updateInforTeacher/${id}`,
-  CHANGE_PASS_TEACHER: (id: string) => `/accounts/changePasswordTeacher/${id}`,
-
+  GET_TEACHER_INFO: (id: string) => `/feedbacks/getInforTeacher/${id}`,
+  UPDATE_TEACHER_INFO: (id: string) => `/feedbacks/updateInforTeacher/${id}`,
+  CHANGE_PASS_TEACHER: (id: string) => `/feedbacks/changePasswordTeacher/${id}`,
+  GET_SY: "/dashboard-class/shoolYear/list",
+ 
   GET_ATTENDANCE_BY_CLASS_AND_SCHOOLYEAR: (
     classId: string,
     schoolYearId: string
