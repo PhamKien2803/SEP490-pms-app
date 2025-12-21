@@ -1,5 +1,16 @@
 {
-  "android": {
-    "package": "com.anonymous.src"
+  "expo": {
+    "name": "PMS App",
+    "slug": "src",
+    "icon": "./src/assets/logoDolphin.png",
+    "android": {
+      "gradleVersion": "8.8",
+      "package": "com.bthieu.src"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4b923b84-ac70-417d-82ec-fb58136cb96e"
+      }
+    }
   }
 }

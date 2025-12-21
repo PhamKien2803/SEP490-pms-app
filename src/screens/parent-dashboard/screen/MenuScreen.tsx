@@ -149,15 +149,25 @@ const MenuScreen: React.FC<Props> = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
+
         {/* Header Title */}
-        <View style={styles.titleContainer}>
-          {/* <MaterialCommunityIcons
-            name="silverware-variant"
-            size={30}
-            color={COLORS.primaryDark}
-          /> */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={26}
+              color={COLORS.primaryDark}
+            />
+          </TouchableOpacity>
+
+          {/* Title */}
           <Text style={styles.title}>Thực đơn tuần</Text>
+
+          {/* Placeholder để căn giữa */}
+          <View style={{ width: 26 }} />
         </View>
 
         {/* --- BỘ ĐIỀU HƯỚNG TUẦN (MỚI) --- */}
@@ -255,6 +265,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    position: "relative",
+  },
+
+  backButton: {
+    position: "absolute",
+    left: 0,
+    padding: 4,
+  },
+
   container: {
     flex: 1,
     padding: 16,
@@ -272,7 +296,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginLeft: 10,
   },
-  
+
   // Style cho thanh điều hướng tuần
   weekNavigator: {
     flexDirection: "row",
@@ -364,7 +388,7 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     fontStyle: "italic",
   },
-  
+
   // Empty State
   noMenuContainer: {
     flex: 1,

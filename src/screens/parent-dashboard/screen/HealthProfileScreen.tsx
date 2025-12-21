@@ -14,7 +14,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { userApis } from "../../../services/apiServices";
 import { AuthStackParamList } from "../../../routes/AuthStack";
-
+import { TouchableOpacity } from "react-native";
 // --- Định nghĩa Typescript (Giữ nguyên) ---
 
 type StudentInfo = {
@@ -206,13 +206,24 @@ const HealthProfileScreen: React.FC<Props> = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.titleContainer}>
-          {/* <MaterialCommunityIcons
-            name="heart-pulse"
-            size={30}
-            color={COLORS.primaryDark}
-          /> */}
+        <View style={styles.header}>
+          {/* Back button */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={26}
+              color={COLORS.primaryDark}
+            />
+          </TouchableOpacity>
+
+          {/* Title */}
           <Text style={styles.title}>Hồ sơ sức khỏe</Text>
+
+          {/* Placeholder để giữ title luôn ở giữa */}
+          <View style={{ width: 26 }} />
         </View>
 
         {loading ? (
@@ -418,6 +429,19 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    position: "relative",
+  },
+
+  backButton: {
+    position: "absolute",
+    left: 0,
+    padding: 4,
   },
   container: {
     flex: 1,

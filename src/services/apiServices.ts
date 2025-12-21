@@ -89,11 +89,11 @@ export const userApis = {
     });
     return response.data;
   },
-  getClassByStuAndSY: async (studentId: string, schoolYearId: string): Promise<User[]> => {
-    const response = await axiosAuth.get<User[]>(apiEndPoint.CLASS_BY_STU_SY, {
+  getClassByStuAndSY: async (studentId: any, schoolYearId: any): Promise<any> => {
+    const response = await axiosAuth.get<any>(apiEndPoint.CLASS_BY_STU_SY, {
       params: { studentId, schoolYearId },
     });
-    return response.data;
+    return response;
   },
   getFbByStuAndDate: async (studentId: string, date: string): Promise<FeedbackApiResponse> => {
     const response = await axiosAuth.get<FeedbackApiResponse>(apiEndPoint.FB_BY_STU_DATE, {
@@ -114,9 +114,9 @@ export const userApis = {
     });
     return response.data; // res.data là Menu object
   },
-  getListSY: async (): Promise<User[]> => {
-    const response = await axiosAuth.get<User[]>(
-      `${apiEndPoint.CREATE_GUARDIAN}`
+  getListSY: async (): Promise<any> => {
+    const response = await axiosAuth.get<any>(
+      `${apiEndPoint.GET_SY}`
     );
     return response.data;
   },
@@ -154,7 +154,6 @@ export const userApis = {
     console.log("🚀 HieuDD ×͜× ~ payload:", payload)
     const url = apiEndPoint.CHANGE_PASS_PARENT(parentId);
     const response = await axiosAuth.put(url, payload);
-    console.log("🚀 HieuDD ×͜× ~ response:", response)
     return response.data;
   },
   confirmTuition: async (

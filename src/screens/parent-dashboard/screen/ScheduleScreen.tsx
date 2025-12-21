@@ -33,9 +33,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Schedule">;
 
 const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
   const { student } = route.params;
-  const classId = "691757179b7ad0c9496f4372"; // Thay bằng student.class?._id nếu có
-  // dkmmmmmmmmm hard code sửa con mẹ m đi
-  
+  const classId = "691757179b7ad0c9496f4372";
 
   const [loading, setLoading] = useState(false);
   const [monthOptions, setMonthOptions] = useState<{ label: string; value: number }[]>([]);
@@ -45,6 +43,8 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
   const [weekGroups, setWeekGroups] = useState<WeekGroup[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<WeekGroup | null>(null);
   const [selectedDay, setSelectedDay] = useState<ScheduleDay | null>(null);
+  const [schoolYearId, setSchoolYearId] = useState<string | null>(null);
+  const [classIdNow, setClassIdNow] = useState<string | null>(null);
 
   // --- Helpers ---
   const formatTime = (minutes: number | undefined) => {
@@ -95,7 +95,45 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
   }, []);
 
   useEffect(() => {
-    if (!classId || !selectedMonth) return;
+    const fetchSchoolYear = async () => {
+      try {
+        const syList: any = await userApis.getListSY();
+        const activeSY = syList?.data?.find(
+          (s: any) => s.state === "Đang hoạt động"
+        );
+
+        if (activeSY?._id) {
+          setSchoolYearId(activeSY._id);
+        }
+      } catch (err) {
+        console.log("❌ Fetch SchoolYear error", err);
+      }
+    };
+
+    fetchSchoolYear();
+  }, []);
+
+  useEffect(() => {
+    if (!schoolYearId || !student?._id) return;
+
+    const fetchClassByStudent = async () => {
+      try {
+        const classStudent: any =
+          await userApis.getClassByStuAndSY(student._id, schoolYearId);
+        const idClass = classStudent.data.class._id;
+        if (idClass) {
+          setClassIdNow(idClass);
+        }
+      } catch (err) {
+        console.log("❌ Fetch class error", err);
+      }
+    };
+
+    fetchClassByStudent();
+  }, [schoolYearId, student._id]);
+
+  useEffect(() => {
+    if (!classIdNow || !selectedMonth) return;
 
     const fetchSchedule = async () => {
       setLoading(true);
@@ -104,33 +142,31 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
       setSelectedDay(null);
 
       try {
-        const res: ApiResponse = await userApis.getScheduleByClassAndMonth(
-          classId,
-          selectedMonth
-        );
+        const res: ApiResponse =
+          await userApis.getScheduleByClassAndMonth(
+            classIdNow,
+            selectedMonth
+          );
 
-        if (res && res.length > 0) {
+        if (res?.length > 0) {
           const monthData = res[0];
           const weeks = groupDaysIntoWeeks(monthData.scheduleDays);
           setWeekGroups(weeks);
 
-          // Mặc định chọn tuần đầu tiên & ngày đầu tiên của tuần đó
           if (weeks.length > 0) {
             setSelectedWeek(weeks[0]);
-            if (weeks[0].days.length > 0) {
-              setSelectedDay(weeks[0].days[0]);
-            }
+            setSelectedDay(weeks[0].days[0]);
           }
         }
       } catch (err) {
-        // Xử lý lỗi im lặng hoặc show toast
+        console.log("❌ Fetch schedule error", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchSchedule();
-  }, [selectedMonth, classId]);
+  }, [classIdNow, selectedMonth]);
 
   // Khi chọn tuần mới, tự động chọn ngày đầu tiên của tuần đó
   const handleSelectWeek = (weekId: string) => {
@@ -170,9 +206,9 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
     if (!selectedWeek) return null;
     return (
       <View style={styles.daySelectorWrapper}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.daySelectorContent}
         >
           {selectedWeek.days.map((day) => {
@@ -203,11 +239,26 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
+
         {/* Header Tiêu đề */}
         <View style={styles.header}>
-          {/* <MaterialCommunityIcons name="calendar-month" size={28} color={COLORS.primaryDark} /> */}
+          {/* Back button */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={26}
+              color={COLORS.primaryDark}
+            />
+          </TouchableOpacity>
+
+          {/* Title */}
           <Text style={styles.headerTitle}>Lịch học</Text>
+
+          {/* Placeholder để căn giữa title */}
+          <View style={{ width: 26 }} />
         </View>
 
         {/* Bộ chọn Tháng & Tuần */}
@@ -220,7 +271,7 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
               style={styles.picker}
             >
               {monthOptions.map((m) => (
-                <Picker.Item key={m.value} label={m.label} value={m.value} style={{fontSize: 14}} />
+                <Picker.Item key={m.value} label={m.label} value={m.value} style={{ fontSize: 14 }} />
               ))}
             </Picker>
           </View>
@@ -235,7 +286,7 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
             >
               {weekGroups.length > 0 ? (
                 weekGroups.map((w) => (
-                  <Picker.Item key={w.id} label={w.label} value={w.id} style={{fontSize: 14}} />
+                  <Picker.Item key={w.id} label={w.label} value={w.id} style={{ fontSize: 14 }} />
                 ))
               ) : (
                 <Picker.Item label="Chưa có lịch" value={null} />
@@ -247,17 +298,17 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
         {loading ? (
           <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
         ) : !selectedDay ? (
-           <View style={styles.centerMessage}>
-             <Text style={styles.textSecondary}>Không có dữ liệu hiển thị</Text>
-           </View>
+          <View style={styles.centerMessage}>
+            <Text style={styles.textSecondary}>Không có dữ liệu hiển thị</Text>
+          </View>
         ) : (
           <>
             {/* Thanh chọn ngày ngang */}
             {renderDaySelector()}
 
             {/* Nội dung chi tiết của ngày đã chọn */}
-            <ScrollView 
-              style={styles.scheduleContent} 
+            <ScrollView
+              style={styles.scheduleContent}
               showsVerticalScrollIndicator={false}
             >
               {/* Tiêu đề ngày */}
@@ -270,21 +321,21 @@ const ScheduleScreen: React.FC<Props> = ({ route, navigation }) => {
 
               {selectedDay.isHoliday ? (
                 <View style={styles.holidayBox}>
-                   <MaterialCommunityIcons name="balloon" size={40} color={COLORS.accent} />
-                   <Text style={styles.holidayText}>Hôm nay là ngày nghỉ!</Text>
+                  <MaterialCommunityIcons name="balloon" size={40} color={COLORS.accent} />
+                  <Text style={styles.holidayText}>Hôm nay là ngày nghỉ!</Text>
                 </View>
               ) : selectedDay.activities.length === 0 ? (
                 <View style={styles.holidayBox}>
-                   <Text style={styles.textSecondary}>Không có hoạt động nào được ghi nhận.</Text>
+                  <Text style={styles.textSecondary}>Không có hoạt động nào được ghi nhận.</Text>
                 </View>
               ) : (
                 <View style={styles.timelineList}>
                   {selectedDay.activities.map(renderActivity)}
                 </View>
               )}
-              
+
               {/* Khoảng trống dưới cùng để không bị che bởi tabbar nếu có */}
-              <View style={{height: 20}} />
+              <View style={{ height: 20 }} />
             </ScrollView>
           </>
         )}
@@ -310,6 +361,11 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1, padding: 16 },
 
+  backButton: {
+    position: "absolute",
+    left: 0,
+    padding: 4,
+  },
   // Header
   header: {
     flexDirection: "row",
@@ -369,7 +425,7 @@ const styles = StyleSheet.create({
     elevation: 4,
     shadowColor: COLORS.primary,
     shadowOpacity: 0.3,
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
   },
   dayNameBtn: {
     fontSize: 14,
@@ -403,7 +459,7 @@ const styles = StyleSheet.create({
     color: COLORS.primaryDark,
     marginLeft: 8,
   },
-  
+
   // Timeline / Activity Card
   timelineList: {
     paddingHorizontal: 2,
