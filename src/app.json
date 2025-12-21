@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "pms-app",
-    "slug": "pms-app",
+    "name": "pms",
+    "slug": "pms",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logoDolphin.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash-icon.png",
